@@ -1,0 +1,14 @@
+# Ignore AWS credential files
+aws_credentials.txt
+
+# Ignore .env files (if any)
+*.env
+
+# Ignore the PGM image files
+big_building-crop.pgm
+big_building.pgm
+
+# General exclusions (add any specific directories or file types here)
+*.log
+*.tmp
+node_modules/
