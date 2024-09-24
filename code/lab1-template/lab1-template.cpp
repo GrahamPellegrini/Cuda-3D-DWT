@@ -8,29 +8,43 @@
  */
 
 #include "../shared/jbutil.h"
+#include <thread>
+#include <vector>
+
+// Define the integration limits
+#define a -2
+#define b 2
+
+// Define the function limits 
+#define A 0
+#define B 0.4
+
+// Define mean and variance 
+#define mean 0
+#define variance 1
+
+// Define number of threads
+#define num_threads 4
+
+//Defining a struct for the results 
+struct Results
+{
+   int count;
+   double integral_estimate;
+   double error;
+};
 
 // Monte Carlo integration function
-
-void MonteCarlo(const int N)
+Results MonteCarlo(const int N)
    {
    std::cerr << "\nImplementation (" << N << " samples)" << std::endl;
    // start timer
    double t = jbutil::gettime();
 
-   // define integration limits
-   const double a = -2;
-   const double b = 2;
-
-   // define y_i limits for function
-   const double A = 0;
-   const double B = 0.4;
-
    // define function to integrate
    // f(x) = (1/sqrt(2.pi.variance^2)) * exp(-(x-mean)^2/2.variance^2)
    auto f = [](double x) -> double
    {
-      const double mean = 0;
-      const double variance = 1;
       return (1.0 / sqrt(2.0 * pi * variance * variance)) * exp(-pow(x - mean, 2) / (2.0 * variance * variance));
    };
    
@@ -39,9 +53,6 @@ void MonteCarlo(const int N)
 
    // initialise count for samples below the function
    int count = 0;
-
-   // initialise sum for integral estimate
-   double sum = 0;
 
    // iterate over samples
    for(int i = 0; i < N; ++i)
@@ -61,9 +72,6 @@ void MonteCarlo(const int N)
          // if so, increment the count
          count++;
       }
-
-      // calculate the integral
-      sum += f_x;
    }
 
    // Integral estimate
@@ -72,24 +80,53 @@ void MonteCarlo(const int N)
    // error function for integral estimate
    double error = erf(sqrt(2));
 
-   // print results
-   std::cerr << "Samples: " << N << std::endl;
-   std::cerr << "Samples below the function: " << count << std::endl;
-   std::cerr << "--------------------------------" << std::endl;
-   std::cerr << "Monte Carlo Fucntion Integration" << sum << std::endl;
-   std::cerr << "Integral Estimate: " << integral_estimate << std::endl;
-   std::cerr << "Error: " << error << std::endl;
-
    // stop timer
    t = jbutil::gettime() - t;
    std::cerr << "Time taken: " << t << "s" << std::endl;
+
+   return {count, integral_estimate, error};
+   }
+
+// Threaded Monte Carlo integration function
+void ThreadedMonteCarlo(const int N)
+   {
+      // define number of samples per thread
+      const int samples_per_thread = N / num_threads;
+
+      // declare vector of threads
+      std::vector<std::thread> threads;
+
+      // iterate over number of threads
+      for (int i = 0; i < num_threads; ++i)
+      {
+         // create thread
+         threads.push_back(std::thread([samples_per_thread](){
+            // call Monte Carlo function
+            MonteCarlo(samples_per_thread);
+         }));
+      }
+
+      // iterate over threads to join them together
+      for (auto& thread : threads)
+      {
+         // wait for thread to finish
+         thread.join();
+      }
+      
    }
 
 // Main program entry point
-
 int main()
    {
    std::cerr << "Lab 1: Monte Carlo integration" << std::endl;
    const int N = int(1E8);
-   MonteCarlo(N);
+   // save results of Monte Carlo function
+   Results results = MonteCarlo(N);
+
+   // print results
+   std::cerr << "Samples: " << N << std::endl;
+   std::cerr << "Samples below the function: " << results.count << std::endl;
+   std::cerr << "--------------------------------" << std::endl;
+   std::cerr << "Integral Estimate: " << results.integral_estimate << std::endl;
+   std::cerr << "Error Estimate: " << results.error << std::endl;
    }
