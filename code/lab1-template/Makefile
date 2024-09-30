@@ -1,24 +1,26 @@
-# Makefile for lab1-template
-
 # Compiler
 CXX = g++
 
 # Compiler flags
 CXXFLAGS = -Wall -Wextra -std=c++11
 
-# Target executable
-TARGET = lab1-template
+# Target executables
+TARGETS = lab1-q1 lab1-q2 
 
-# Source files
-SRCS = lab1-template.cpp
+# Source files with paths
+SRCS = lab1-q1.cpp lab1-q2.cpp
 
-# Object files
+# Object files with paths
 OBJS = $(SRCS:.cpp=.o)
 
 # Default target
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): $(OBJS)
+# Rules for each target
+lab1-q1: lab1-q1.o
+	$(CXX) -o $@ $^
+
+lab1-q2: lab1-q2.o
 	$(CXX) -o $@ $^
 
 # Rule to compile source files to object files
@@ -27,4 +29,4 @@ $(TARGET): $(OBJS)
 
 # Clean up
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGETS)
