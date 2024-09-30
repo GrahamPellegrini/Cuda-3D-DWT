@@ -7,7 +7,7 @@
  * integration.
  */
 
-#include "../shared/jbutil.h"
+#include "../../shared/jbutil.h"
 
 // Monte Carlo integration function
 
