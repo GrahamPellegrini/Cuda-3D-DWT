@@ -27,6 +27,8 @@ void MonteCarloThread(const int N, std::atomic<int>& total_count)
 {
     // Declare random number generator
     jbutil::randgen rng;
+    // Seed the random number generator depending on the thread id
+    rng.seed(std::hash<std::thread::id>{}(std::this_thread::get_id()));
     // Initialise count for samples within each thread
     int local_count = 0;
 
@@ -47,6 +49,10 @@ void MonteCarloThread(const int N, std::atomic<int>& total_count)
             ++local_count;
         }
     }
+
+    // Print the local count to check that each thread is individually counting
+    std::cerr << "Local count: " << local_count << std::endl;
+
     // Add the local count to the total count
     total_count += local_count;
 }
