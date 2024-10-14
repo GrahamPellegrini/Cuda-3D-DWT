@@ -1,19 +1,65 @@
-# Compiler and flags
+# Compiler
 CXX = g++
-CXXFLAGS = -std=c++11 -O2 -Wall
 
-# Targets
-TARGET = lab2-q1
-OBJECTS = lab2-q1.o
+# Compiler flags
+CXXFLAGS = -Wall -Wextra -std=c++11
 
-# Build executable
-$(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS)
+# Directories
+SRC_DIR = ../lab2
+BIN_DIR = $(SRC_DIR)/bin
+TEMPLATE_DIR = $(SRC_DIR)/template
 
-# Compile source files into object files
-lab2-q1.o: lab2-q1.cpp
-	$(CXX) $(CXXFLAGS) -c lab2-q1.cpp -o lab2-q1.o
+# Source files
+SRCS = $(SRC_DIR)/lab2-q1-grey.cpp \
+		$(SRC_DIR)/lab2-q1-multi.cpp \
+	   	$(SRC_DIR)/lab2-q2.1.cpp \
+	   	$(SRC_DIR)/lab2-q2.2.cpp \
+		$(SRC_DIR)/lab2-q3.cpp \
+
+
+
+# Object files
+OBJS = $(BIN_DIR)/lab2-q1-grey.o \
+	   $(BIN_DIR)/lab2-q1-multi.o \
+	   $(BIN_DIR)/lab2-q2.1.o \
+	   $(BIN_DIR)/lab2-q2.2.o \
+	   $(BIN_DIR)/lab2-q3.o \
+
+# Executable files
+TARGETS = $(BIN_DIR)/lab2-q1-grey \
+		  $(BIN_DIR)/lab2-q1-multi \
+		  $(BIN_DIR)/lab2-q2.1 \
+		  $(BIN_DIR)/lab2-q2.2 \
+		  $(BIN_DIR)/lab2-q3 \
+
+# Default target
+all: $(TARGETS)
+
+# Rule for lab2-q1-grey
+$(BIN_DIR)/lab2-q1-grey: $(BIN_DIR)/lab2-q1-grey.o
+	$(CXX) -o $@ $^
+
+# Rule for lab2-q1-multi
+$(BIN_DIR)/lab2-q1-multi: $(BIN_DIR)/lab2-q1-multi.o
+	$(CXX) -o $@ $^
+	
+# Rule for lab2-q2.1
+$(BIN_DIR)/lab2-q2.1: $(BIN_DIR)/lab2-q2.1.o
+	$(CXX) -o $@ $^
+
+# Rule for lab2-q2.2
+$(BIN_DIR)/lab2-q2.2: $(BIN_DIR)/lab2-q2.2.o
+	$(CXX) -o $@ $^
+
+# Rule for lab2-q3
+$(BIN_DIR)/lab2-q3: $(BIN_DIR)/lab2-q3.o
+	$(CXX) -o $@ $^
+	
+# Rule to compile source files to object files and place them in bin
+$(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 
 # Clean up
 clean:
-	rm -f $(TARGET) $(OBJECTS)
+	rm -f $(OBJS) $(TARGETS)
