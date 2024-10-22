@@ -11,45 +11,49 @@
 #include <cmath>
 // Include for SIMD Vecotrization
 #include <immintrin.h>
-#include <emmintrin.h>  // SSE2 intrinsics
 
 // Define the SIMD data type for 4 integers
 typedef float v4sf __attribute__ ((vector_size (16)));
-typedef int v4si __attribute__ ((vector_size (16)));
+
 
 // Define the vectorized zero and one constants
 const v4sf zero = {0.0f, 0.0f, 0.0f, 0.0f};
 const v4sf one = {1.0f, 1.0f, 1.0f, 1.0f};
 // Define the pi vectoirzed constant
 const v4sf vpi = {3.141592f, 3.141592f, 3.141592f, 3.141592f};
+// Define the epsilon constant for near-zero values
+const v4sf epsilon = {1e-6, 1e-6, 1e-6, 1e-6};
 
-// Define the sinc function for SIMD
-v4sf sinc(v4sf x)
-{   
-    // Absolute value of x can be calculated using the AND operation
-    v4sf abs_x = __builtin_ia32_andps(x,x);
+// Vectorized clamp function for SIMD 
+v4sf clamp(v4sf value, v4sf min_val, v4sf max_val) {
+    // Apply min and max clamping
+    value = __builtin_ia32_maxps(value, min_val); // Clamp to min
+    value = __builtin_ia32_minps(value, max_val); // Clamp to max
 
-    // Compare x equal to zero
+    // Set values smaller than epsilon to zero
+    v4sf near_zero_mask = __builtin_ia32_cmpltps(value, epsilon);
+    // Set the values to zero where the value is less than epsilon
+    value = __builtin_ia32_andnps(near_zero_mask, value); 
+    return value;
+}
+
+// Define the SIMD sinc function
+v4sf sinc(v4sf x) { 
+    // Compare x with zero
     v4sf cmp0 = __builtin_ia32_cmpeqps(x, zero);
 
-    // pix = πx
-    v4sf pix = {vpi[0] * x[0], vpi[1] * x[1], vpi[2] * x[2], vpi[3] * x[3]};
+    // pix = π * x
+    v4sf pix = x * vpi;
     
-    // Initialize sinc_x with zeros
-    v4sf sinc_x = {0.0f, 0.0f, 0.0f, 0.0f};
+    // Initialize sin_x to the sin of pix
+    v4sf sin_x = {sin(pix[0]), sin(pix[1]), sin(pix[2]), sin(pix[3])};
 
-    // Calculate sin(πx) for non-zero values
-    v4sf sin_pix = {sin(pix[0]), sin(pix[1]), sin(pix[2]), sin(pix[3])};
+    // Calculate the sinc function: sin(πx)/(πx)
+    v4sf sinc_x = sin_x / pix;
+    // Avoid division by zero: if x is zero, use one, otherwise perform sin(πx)/(πx)
+    sinc_x = __builtin_ia32_andnps(cmp0, sinc_x) + __builtin_ia32_andps(cmp0, one);
 
-    // Only perform division where pix is not zero
-    v4sf non_zero_pix = __builtin_ia32_andnps(cmp0, pix); // Get pix where x is not zero
-    sinc_x = sin_pix / non_zero_pix; // Division by non-zero pix
-
-    // Set sinc(x) to 1 where x is zero
-    sinc_x = __builtin_ia32_andps(cmp0, one) + __builtin_ia32_andnps(cmp0, sinc_x);
-
-    // Return the sinc(x) vector
-    return sinc_x;
+    return sinc_x; // Return the result
 }
 
 // Unroll the lancoz function to vecotrize the weights calculation
@@ -61,58 +65,35 @@ std::vector<double> lanczos(int a)
     v4sf va = {a, a, a, a};
 
     // Loop unrolling for the weights calculation
-    for (int i = -a + 1; i <= a; i+=4)
+    for (float i = -a + 1; i <= a; i+=4)
     {
         v4sf x = {i, i + 1, i + 2, i + 3};  // Vector of x values
 
         // Apply sinc(x) 
         v4sf sinc_x = sinc(x); 
         // Calculate x/va
-        v4sf x_div_a = __builtin_ia32_divps(x, va);         
+        v4sf x_div_a = x/va;         
         // Apply sinc(x/a) 
         v4sf sinc_x_div_a = sinc(x_div_a); 
 
         // Calculate the weights: sinc(x) * sinc(x / a)
         v4sf w = sinc_x * sinc_x_div_a;
 
-        // Take the absolute value of the weights using an abs operation
-        v4sf abs_w = {abs(w[0]), abs(w[1]), abs(w[2]), abs(w[3])};
+        // Take the absolute value of the weights by ANDing the weights with itself
+        v4sf abs_w = __builtin_ia32_andps(w, w);
 
-        // Store the weights in the vector
-        weights.push_back(w[0]);
-        weights.push_back(w[1]);
-        weights.push_back(w[2]);
-        weights.push_back(w[3]);
-        
+        // Clamp the weights to zero if the weights are less than epsilon
+        abs_w = clamp(abs_w, zero, one);
+
+        // Loop through the weights and store them in the weights vector
+        for (int j = 0; j < 4; j++)
+        {
+            weights.push_back(abs_w[j]);
+        }
     }
     // Return the weights vector
     return weights;
 }
-
-// Define a clamp function for SIMD
-v4sf clamp(v4sf x, v4sf min, v4sf max) {
-    // Create flags for comparisons
-    v4sf cmp_min = __builtin_ia32_cmpltps(x, min); // True if x < min
-    v4sf cmp_max = __builtin_ia32_cmpltps(max, x); // True if x > max
-
-    // Create minimum value where x is below min
-    v4sf mini = __builtin_ia32_andps(cmp_min, min);
-
-    // Create maximum value where x is above max
-    v4sf maxi = __builtin_ia32_andps(cmp_max, max);
-
-    // Retain x where it is within the bounds (not below min or above max)
-    x = __builtin_ia32_andnps(cmp_min, x); // x remains unchanged if x >= min
-    x = __builtin_ia32_andnps(cmp_max, x); // x remains unchanged if x <= max
-
-    // Combine the results to get the final clamped value
-    x = __builtin_ia32_orps(x, mini); // Incorporate min where applicable
-    x = __builtin_ia32_orps(x, maxi); // Incorporate max where applicable
-    
-    // Return the clamped vector
-    return x;
-}
-
 
 // Resample the image using Lanczos filter
 template <class real>
@@ -148,18 +129,18 @@ void process(const std::string infile, const std::string outfile,
     // Lanczos weight calculations for rows and columns stored in vectors
     std::vector<double> r_weights = lanczos(a);
     std::vector<double> c_weights = lanczos(a);
-
+    
     // Iterate over the output image rows and columns, applying the Lanczos filter
     for (int m = 0; m < rows_out; m += 4)  // Process 4 rows at a time
     {
         for (int n = 0; n < cols_out; n += 4)  // Process 4 columns at a time
         {
-            // Map output pixel (m, n) to input pixel space (float values)
-            v4sf mR = {(m / R), (m + 1) / R, (m + 2) / R, (m + 3) / R};
-            v4sf nR= {(n / R), (n + 1) / R, (n + 2) / R, (n + 3) / R};
+            // Map output pixel (m, n) to input pixel space (float values), taking the ceiling to bring int values for indexing
+            v4sf mR = {ceil((m/R)), ceil((m + 1)/R), ceil((m + 2)/R), ceil((m + 3)/R)};
+            v4sf nR = {ceil((n/R)), ceil((n + 1)/R), ceil((n + 2)/R), ceil((n + 3)/R)};
 
             // Initialize sum for pixel contributions
-            v4sf sum = {0.0f, 0.0f, 0.0f, 0.0f};
+            v4sf sum = zero;
 
             // Perform Lanczos convolution within the window of size 'a'
             for (int i = -a + 1; i <= a; i += 1)
@@ -206,7 +187,7 @@ void process(const std::string infile, const std::string outfile,
                     v4sf invalid = __builtin_ia32_andps(m_in_invalid, n_in_invalid);
             
                     // Calculate weight for each position using Lanczos
-                    v4sf weight = {r_weights[i + a - 1] * c_weights[j + a - 1], r_weights[i + a] * c_weights[j + a], r_weights[i + a + 1] * c_weights[j + a + 1], r_weights[i + a + 2] * c_weights[j + a + 2]};
+                    v4sf weight = {r_weights[i + a -1 ] * c_weights[j + a - 1], r_weights[i + a] * c_weights[j + a], r_weights[i + a + 1] * c_weights[j + a + 1], r_weights[i + a + 2] * c_weights[j + a + 2]};
 
                     // Load the pixel values corresponding to the weights from the input image into vectorized form 
                     v4sf vec_pixel = {
@@ -230,8 +211,11 @@ void process(const std::string infile, const std::string outfile,
             // Maximum value for the image
             v4sf max_range = {image_out.range(), image_out.range(), image_out.range(), image_out.range()};
 
-            // Clamp the sum to the image range
+            //std::cerr << "Sum before clamp: " << sum[0] << " " << sum[1] << " " << sum[2] << " " << sum[3] << std::endl;
             sum = clamp(sum, zero, max_range);
+            //std::cerr << "Sum after clamp: " << sum[0] << " " << sum[1] << " " << sum[2] << " " << sum[3] << std::endl;
+
+
 
             // Store the final result into the output image
             image_out(0, m, n) = static_cast<int>(sum[0]);
