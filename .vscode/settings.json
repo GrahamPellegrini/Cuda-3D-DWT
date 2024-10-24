@@ -57,6 +57,7 @@
         "cstring": "cpp",
         "complex": "cpp",
         "unordered_set": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "iomanip": "cpp"
     }
 }
