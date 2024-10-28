@@ -1,0 +1,25 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{CCE3015 - Assignment 1 – Problem Research and Planning}
+\author{Graham Pellegrini}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\section{Question 1}
+Multi-level 3D Discrete Wavelet Transform (DWT) is a transform technique used in signal processing, data compression and denoising to decompose the input data into a set of sub-bands that capture different frequency components across multiple resolutions.\\
+
+In this problem description we will handle the CHOAS dataset, which is composed of large 3D images saved in slices as .dcm files \cite{choas}. These images will first be pre-processed in python to a csv file format. The pre-processing will involve reading the .dcm files, converting them to numpy arrays, and then saving them to a csv file. The csv file will then be read and used in the cpp implementation of the 3D DWT.\\
+
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+https://chaos.grand-challenge.org/Download/
+
+\end{document}
