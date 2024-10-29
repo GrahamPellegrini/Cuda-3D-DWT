@@ -4,159 +4,209 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <stdexcept>
+#include <memory>
 #include "../include/loadcsv.h"
 #include "../include/savecsv.h"
-#include "../../shared/jbutil.h"
+#include "../../code/shared/jbutil.h"
 
-// 1D Haar wavelet transform
-void haar_wavelet_1d(const std::vector<float>& signal, std::vector<float>& L, std::vector<float>& H) {
-    // Get the size of the signal
-    int n = signal.size();
-    // Set the size of the output vectors for the low-pass and high-pass coefficients
-    L.resize(n / 2);
-    H.resize(n / 2);
-    
-    // Loop through the signal and apply the Haar wavelet transform
-    for (int i = 0; i < n / 2; ++i) {
-        // Compute the low-pass and high-pass coefficients
-        // The Haar wavelet transform is a simple difference and average operation for the low-pass and high-pass coefficients, respectively
-        L[i] = (signal[2 * i] + signal[2 * i + 1]) / std::sqrt(2.0);// Average
-        H[i] = (signal[2 * i] - signal[2 * i + 1]) / std::sqrt(2.0);// Difference
+// Hard coding wavelet low and high pass filters coefficients for different db wavelet types
+const std::vector<float> db1L = {0.7071067811865476, 0.7071067811865476};
+const std::vector<float> db1H = {-0.7071067811865476, 0.7071067811865476};
+const std::vector<float> db2L = {-0.12940952255126037, 0.2241438680420134, 0.8365163037378079, 0.48296291314453416};
+const std::vector<float> db2H = {-0.48296291314453416, 0.8365163037378079, -0.2241438680420134, -0.12940952255126037};
+const std::vector<float> db3L = {0.03522629188570953, -0.08544127388202666, -0.13501102001025458, 0.45987750211849154, 0.8068915093110925, 0.33267055295008263};
+const std::vector<float> db3H = {-0.33267055295008263, 0.8068915093110925, -0.45987750211849154, -0.13501102001025458, 0.08544127388202666, 0.03522629188570953};
+const std::vector<float> db4L = {-0.010597401785069032, 0.0328830116668852, 0.030841381835560764, -0.18703481171909309, -0.027983769416859854, 0.6308807679298589, 0.7148465705529157, 0.2303778133088965};
+const std::vector<float> db4H = {-0.2303778133088965, 0.7148465705529157, -0.6308807679298589, -0.027983769416859854, 0.18703481171909309, 0.030841381835560764, -0.0328830116668852, -0.010597401785069032};
+
+// Function to get wavelet coefficients based on db_num
+void get_wavelet_coefficients(int db_num, std::vector<float>& low_pass, std::vector<float>& high_pass) {
+    switch (db_num) {
+        case 1:
+            low_pass = db1L;
+            high_pass = db1H;
+            break;
+        case 2:
+            low_pass = db2L;
+            high_pass = db2H;
+            break;
+        case 3:
+            low_pass = db3L;
+            high_pass = db3H;
+            break;
+        case 4:
+            low_pass = db4L;
+            high_pass = db4H;
+            break;
+        default:
+            throw std::invalid_argument("Invalid db_num, must be between 1 and 4");
     }
 }
 
-// 3D Haar wavelet transform
-void haar_wavelet_3d(std::vector<std::vector<std::vector<float>>>& volume,
-                     int depth, int rows, int cols,
-                     std::vector<std::vector<std::vector<float>>>& LLL,
-                     std::vector<std::vector<std::vector<float>>>& LLH,
-                     std::vector<std::vector<std::vector<float>>>& LHL,
-                     std::vector<std::vector<std::vector<float>>>& LHH,
-                     std::vector<std::vector<std::vector<float>>>& HLL,
-                     std::vector<std::vector<std::vector<float>>>& HLH,
-                     std::vector<std::vector<std::vector<float>>>& HHL,
-                     std::vector<std::vector<std::vector<float>>>& HHH) {
-  
-    
-    // Confirm the dimensions of the volume (debugging)
-    std::cerr << "Volume dimensions: " << volume.size() << " x " << volume[0].size() << " x " << volume[0][0].size() << std::endl;
+// 1D wavelet transform
+void wavelet_1d(std::vector<float>& signal, int db_num = 1) {
+    int n = signal.size();
+    std::vector<float> temp(n);
+    std::vector<float> low_pass, high_pass;
+
+    // Get the appropriate wavelet coefficients
+    get_wavelet_coefficients(db_num, low_pass, high_pass);
+
+    // Apply convolution with the low pass filter
+    for (int i = 0; i < n / 2; ++i) {
+        temp[i] = 0;
+        for (int j = 0; j < low_pass.size(); ++j) {
+            int idx = (2 * i + j) % n; // Using modulus to handle wrap-around
+            temp[i] += signal[idx] * low_pass[j];
+        }
+    }
+
+    // Apply convolution with the high pass filter
+    for (int i = 0; i < n / 2; ++i) {
+        temp[i + n / 2] = 0;
+        for (int j = 0; j < high_pass.size(); ++j) {
+            int idx = (2 * i + j) % n; // Using modulus to handle wrap-around
+            temp[i + n / 2] += signal[idx] * high_pass[j];
+        }
+    }
+
+    // Copy the result back to the signal
+    signal = temp; // Direct assignment
+}
+
+// 3D wavelet transform
+void wavelet_3d(std::vector<std::vector<std::vector<float>>>& volume, int depth, int rows, int cols, int db_num = 1) {
+    // Apply the 1D wavelet transform along the depth
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            std::vector<float> signal(depth);
+            for (int d = 0; d < depth; ++d) {
+                signal[d] = volume[d][r][c];
+            }
+            wavelet_1d(signal, db_num);
+            for (int d = 0; d < depth; ++d) {
+                volume[d][r][c] = signal[d];
+            }
+        }
+    }
+
+    // Apply the 1D wavelet transform along the rows
+    for (int d = 0; d < depth; ++d) {
+        for (int c = 0; c < cols; ++c) {
+            std::vector<float> signal(rows);
+            for (int r = 0; r < rows; ++r) {
+                signal[r] = volume[d][r][c];
+            }
+            wavelet_1d(signal, db_num);
+            for (int r = 0; r < rows; ++r) {
+                volume[d][r][c] = signal[r];
+            }
+        }
+    }
+
+    // Apply the 1D wavelet transform along the columns
+    for (int d = 0; d < depth; ++d) {
+        for (int r = 0; r < rows; ++r) {
+            std::vector<float> signal(cols);
+            for (int c = 0; c < cols; ++c) {
+                signal[c] = volume[d][r][c];
+            }
+            wavelet_1d(signal, db_num);
+            for (int c = 0; c < cols; ++c) {
+                volume[d][r][c] = signal[c];
+            }
+        }
+    }
+}
+
+// Multi-level wavelet transform
+void multi_level_wavelet(
+    std::vector<std::vector<std::vector<float>>>& volume,
+    int& depth, int& rows, int& cols, int multi_level, int db_num) {
 
     // Start timer to measure time taken
     double t = jbutil::gettime();
 
-    // First temporary storage for intermediate results along the y dimension
-    std::vector<std::vector<std::vector<float>>> temp(depth, std::vector<std::vector<float>>(rows, std::vector<float>(cols)));
+    // Create a copy of the original volume to work on
+    auto temp_volume = volume; // Automatic memory management with std::vector
 
-    
-    // Apply 1D Haar transform along y dimension (cols)
-    // Iterate through the other dimensions
-    for (int d = 0; d < depth; ++d) {
-        for (int r = 0; r < rows; ++r) {
-            std::vector<float> L, H;
-            // Apply the 1D Haar wavelet transform to the 1D signal along the y dimension
-            haar_wavelet_1d(volume[d][r], L, H);
-            // Iterate through the half of the columns to store the low-pass and high-pass coefficients
-            for (int c = 0; c < cols / 2; ++c) {
-                temp[d][r][c] = L[c];
-                temp[d][r][c + cols / 2] = H[c];
-            }
-        }
-    }
-    
-    // Second temporary storage for intermediate results along the x dimension
-    std::vector<std::vector<std::vector<float>>> temp2(depth, std::vector<std::vector<float>>(rows, std::vector<float>(cols)));
+    // Loop through the multi_level and apply the wavelet transform at each level
+    for (int i = 0; i < multi_level; ++i) {
+        // Apply the 3D wavelet transform
+        wavelet_3d(temp_volume, depth, rows, cols, db_num);
 
-    // Apply 1D Haar transform along x dimension (rows)
-    // Iterate through the other dimensions
-    for (int d = 0; d < depth; ++d) {
-        for (int c = 0; c < cols; ++c) {
-            std::vector<float> L, H;
-            std::vector<float> signal(rows);
-            // Store the already transformed coefficients from the temporary storage
-            for (int r = 0; r < rows; ++r) {
-                // Taking the 1D signal along the x dimension
-                signal[r] = temp[d][r][c];
-            }
-            // Apply the 1D Haar wavelet transform to the 1D signal along the x dimension
-            haar_wavelet_1d(signal, L, H);
-            // Iterate through the half of the rows to store the low-pass and high-pass coefficients
+        // Copy the LLL subband back to the original volume
+        for (int d = 0; d < depth / 2; ++d) {
             for (int r = 0; r < rows / 2; ++r) {
-                temp2[d][r][c] = L[r];
-                temp2[d][r + rows / 2][c] = H[r];
+                for (int c = 0; c < cols / 2; ++c) {
+                    volume[d][r][c] = temp_volume[d][r][c];
+                }
             }
         }
-    }
-    
-    // iterate through the volume to store the final sub-bands by splitting the temp2 with the sub-bands logic
-    for (int d = 0; d < depth / 2; ++d) {
-        for (int r = 0; r < rows / 2; ++r) {
-            for (int c = 0; c < cols / 2; ++c) {
-                LLL[d][r][c] = temp2[d][r][c];
-                LLH[d][r][c] = temp2[d][r][c + cols / 2];
-                LHL[d][r][c] = temp2[d][r + rows / 2][c];
-                LHH[d][r][c] = temp2[d][r + rows / 2][c + cols / 2];
-                HLL[d][r][c] = temp2[d + depth / 2][r][c];
-                HLH[d][r][c] = temp2[d + depth / 2][r][c + cols / 2];
-                HHL[d][r][c] = temp2[d + depth / 2][r + rows / 2][c];
-                HHH[d][r][c] = temp2[d + depth / 2][r + rows / 2][c + cols / 2];
-            }
-        }
+
+        // Update the dimensions for the next level
+        depth /= 2;
+        rows /= 2;
+        cols /= 2;
     }
 
     // Stop timer
     t = jbutil::gettime() - t;
     // Show time taken
     std::cerr << "Time taken: " << t << "s" << std::endl;
+
+    // Clear the temporary volume
+    temp_volume.clear();
 }
 
 // Main program entry point
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     std::cerr << "Assignment 1: Synchronous DWT on 3D CT Image" << std::endl;
 
-    if (argc != 3) { // Expecting two arguments: directory and depth
-        std::cerr << "Usage: " << argv[0] << " <csv_file> <output_coefficients>" << std::endl;
+    if (argc != 5) { // Expecting four arguments: csv_file, output_coefficients, multi_level, db_num
+        std::cerr << "Usage: " << argv[0] << " <csv_file> <output_coefficients> <multi_level> <db_num>" << std::endl;
         return EXIT_FAILURE;
     }
 
     // Load the arguments into variables
     std::string csv_file = argv[1];
     std::string output_coefficients = argv[2];
-    int rows, cols, depth;
+    int multi_level = std::stoi(argv[3]);
+    int db_num = std::stoi(argv[4]);
+
+    // Check if the multi_level is between 1 and 4
+    if (multi_level < 1 || multi_level > 4) {
+        std::cerr << "Error: multi_level must be between 1 and 4." << std::endl;
+        return EXIT_FAILURE;
+    }
+    // Check if the db_num is between 1 and 4
+    if (db_num < 1 || db_num > 4) {
+        std::cerr << "Error: db_num must be between 1 and 4." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // Load the CT volume from CSV file
+    std::vector<std::vector<std::vector<float>>> volume;
+    int depth, rows, cols;
+    volume = load_csv(csv_file, depth, rows, cols);
+
+    // Check if the volume was loaded successfully (debugging)
+    if (volume.empty()) {
+        std::cerr << "Error loading the volume from CSV file." << std::endl;
+        return EXIT_FAILURE;
+    }
+    else {
+        std::cerr << "Volume loaded successfully." << std::endl;
+        // Print the dimensions of the volume (debugging)
+        std::cerr << "Volume dimensions: " << depth << " x " << rows << " x " << cols << std::endl;
+    }
+
+    // Apply the multi-level wavelet transform
+    multi_level_wavelet(volume, depth, rows, cols, multi_level, db_num);
+
+    // Save the wavelet coefficients to a CSV file
+    save_csv(output_coefficients, volume, depth, rows, cols, multi_level);
     
-    // Load the volume from the CSV file using the defined function in loadcsv.h
-    auto volume = load_volume_from_csv(csv_file, rows, cols, depth);
-
-    // Check if the volume is loaded (debugging)
-    std::cerr << "Loaded volume dimensions: " <<depth << " x " << rows << " x " << cols << std::endl;
-
-    // Define the 3D vectors to store the transformed coefficients with the respective sub-bands size
-    std::vector<std::vector<std::vector<float>>> LLL(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-    std::vector<std::vector<std::vector<float>>> LLH(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-    std::vector<std::vector<std::vector<float>>> LHL(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-    std::vector<std::vector<std::vector<float>>> LHH(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-    std::vector<std::vector<std::vector<float>>> HLL(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-    std::vector<std::vector<std::vector<float>>> HLH(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-    std::vector<std::vector<std::vector<float>>> HHL(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-    std::vector<std::vector<std::vector<float>>> HHH(depth / 2, std::vector<std::vector<float>>(rows / 2, std::vector<float>(cols / 2)));
-
-    // Apply the 3D Haar wavelet transform using the defined function
-    haar_wavelet_3d(volume, depth, rows, cols, LLL, LLH, LHL, LHH, HLL, HLH, HHL, HHH);
-    
-    // Save the transformed coefficients to a CSV file using the defined function in savecsv.h
-    save_coefficients_to_csv(output_coefficients, LLL, LLH, LHL, LHH, HLL, HLH, HHL, HHH);
-
-    // Free the memory allocated for the volume and coefficients
-    volume.clear();
-    LLL.clear();
-    LLH.clear();
-    LHL.clear();
-    LHH.clear();
-    HLL.clear();
-    HLH.clear();
-    HHL.clear();
-    HHH.clear();
-
-    // Return success
     return EXIT_SUCCESS;
 }
