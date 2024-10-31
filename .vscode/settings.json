@@ -58,6 +58,7 @@
         "complex": "cpp",
         "unordered_set": "cpp",
         "cinttypes": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "map": "cpp"
     }
 }

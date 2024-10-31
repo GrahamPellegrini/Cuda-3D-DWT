@@ -1,212 +1,206 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <vector>
-#include <string>
-#include <cmath>
 #include <stdexcept>
-#include <memory>
-#include "../include/loadcsv.h"
-#include "../include/savecsv.h"
+#include <cmath>
+#include "../include/loadbin.h"
+#include "../include/savebin.h"
 #include "../../code/shared/jbutil.h"
 
-// Hard coding wavelet low and high pass filters coefficients for different db wavelet types
-const std::vector<float> db1L = {0.7071067811865476, 0.7071067811865476};
-const std::vector<float> db1H = {-0.7071067811865476, 0.7071067811865476};
-const std::vector<float> db2L = {-0.12940952255126037, 0.2241438680420134, 0.8365163037378079, 0.48296291314453416};
-const std::vector<float> db2H = {-0.48296291314453416, 0.8365163037378079, -0.2241438680420134, -0.12940952255126037};
-const std::vector<float> db3L = {0.03522629188570953, -0.08544127388202666, -0.13501102001025458, 0.45987750211849154, 0.8068915093110925, 0.33267055295008263};
-const std::vector<float> db3H = {-0.33267055295008263, 0.8068915093110925, -0.45987750211849154, -0.13501102001025458, 0.08544127388202666, 0.03522629188570953};
-const std::vector<float> db4L = {-0.010597401785069032, 0.0328830116668852, 0.030841381835560764, -0.18703481171909309, -0.027983769416859854, 0.6308807679298589, 0.7148465705529157, 0.2303778133088965};
-const std::vector<float> db4H = {-0.2303778133088965, 0.7148465705529157, -0.6308807679298589, -0.027983769416859854, 0.18703481171909309, 0.030841381835560764, -0.0328830116668852, -0.010597401785069032};
+// Define the wavelet coefficients as floats
+const std::vector<std::vector<float>> db_low = {
+    {0.70710678f, 0.70710678f}, // db1
+    {-0.12940952f, 0.22414387f, 0.83651630f, 0.48296291f}, // db2
+    {0.03522629f, -0.08544127f, -0.13501102f, 0.45987750f, 0.80689151f, 0.33267055f}, // db3
+    {-0.01059740f, 0.03288301f, 0.03084138f, -0.18703481f, -0.02798377f, 0.63088077f, 0.71484657f, 0.23037781f} // db4
+};
 
-// Function to get wavelet coefficients based on db_num
-void get_wavelet_coefficients(int db_num, std::vector<float>& low_pass, std::vector<float>& high_pass) {
-    switch (db_num) {
-        case 1:
-            low_pass = db1L;
-            high_pass = db1H;
-            break;
-        case 2:
-            low_pass = db2L;
-            high_pass = db2H;
-            break;
-        case 3:
-            low_pass = db3L;
-            high_pass = db3H;
-            break;
-        case 4:
-            low_pass = db4L;
-            high_pass = db4H;
-            break;
-        default:
-            throw std::invalid_argument("Invalid db_num, must be between 1 and 4");
+const std::vector<std::vector<float>> db_high = {
+    {-0.70710678f, 0.70710678f}, // db1
+    {-0.48296291f, 0.83651630f, -0.22414387f, -0.12940952f}, // db2
+    {-0.33267055f, 0.80689151f, -0.45987750f, -0.13501102f, 0.08544127f, 0.03522629f}, // db3
+    {-0.23037781f, 0.71484657f, -0.63088077f, -0.02798377f, 0.18703481f, 0.03084138f, -0.03288301f, -0.01059740f} // db4
+};
+
+void dwt_1d(std::vector<float>& signal, int db_num) {
+    if (db_num < 1 || db_num > 4) {
+        std::cerr << "Invalid db_num. Please select from db1, db2, db3, or db4." << std::endl;
+        return;
+    }
+
+    // Retrieve the low-pass and high-pass filters based on db_num
+    const std::vector<float>& low_filter = db_low[db_num - 1];
+    const std::vector<float>& high_filter = db_high[db_num - 1];
+    int filter_length = low_filter.size();
+
+    // Prepare vectors to store results temporarily
+    int approx_size = (signal.size() + 1) / 2;
+    std::vector<float> approx(approx_size, 0.0f);
+    std::vector<float> detail(approx_size, 0.0f);
+
+    // Perform convolution and downsampling
+    int signal_length = signal.size();
+    for (int i = 0; i <= signal_length - filter_length; i += 2) {
+        float low_sum = 0.0f;
+        float high_sum = 0.0f;
+
+        // Apply filters
+        for (int j = 0; j < filter_length; ++j) {
+            low_sum += signal[i + j] * low_filter[j];
+            high_sum += signal[i + j] * high_filter[j];
+        }
+
+        // Store the results in the approximation and detail vectors
+        approx[i / 2] = low_sum;
+        detail[i / 2] = high_sum;
+    }
+
+    // Copy the approximation and detail coefficients back to the original signal vector
+    for (int i = 0; i < approx_size; ++i) {
+        signal[i] = approx[i];
+        signal[i + approx_size] = detail[i];
+    }
+
+    // Zero padding for remaining positions if signal length is odd
+    for (int i = 2 * approx_size; i < signal_length; ++i) {
+        signal[i] = 0.0f;
     }
 }
 
-// 1D wavelet transform
-void wavelet_1d(std::vector<float>& signal, int db_num = 1) {
-    int n = signal.size();
-    std::vector<float> temp(n);
-    std::vector<float> low_pass, high_pass;
+void haar_1d(std::vector<float>& signal) {
+    int signal_length = signal.size();
+    int approx_size = (signal_length + 1) / 2;
 
-    // Get the appropriate wavelet coefficients
-    get_wavelet_coefficients(db_num, low_pass, high_pass);
+    // Prepare vectors to store results temporarily
+    std::vector<float> approx(approx_size, 0.0f);
+    std::vector<float> detail(approx_size, 0.0f);
 
-    // Apply convolution with the low pass filter
-    for (int i = 0; i < n / 2; ++i) {
-        temp[i] = 0;
-        for (int j = 0; j < low_pass.size(); ++j) {
-            int idx = (2 * i + j) % n; // Using modulus to handle wrap-around
-            temp[i] += signal[idx] * low_pass[j];
-        }
+    // Perform convolution and downsampling
+    for (int i = 0; i < approx_size; ++i) {
+        approx[i] = (signal[2 * i] + signal[2 * i + 1]) / 2.0f;
+        detail[i] = (signal[2 * i] - signal[2 * i + 1]) / 2.0f;
     }
 
-    // Apply convolution with the high pass filter
-    for (int i = 0; i < n / 2; ++i) {
-        temp[i + n / 2] = 0;
-        for (int j = 0; j < high_pass.size(); ++j) {
-            int idx = (2 * i + j) % n; // Using modulus to handle wrap-around
-            temp[i + n / 2] += signal[idx] * high_pass[j];
-        }
+    // Copy the approximation and detail coefficients back to the original signal vector
+    for (int i = 0; i < approx_size; ++i) {
+        signal[i] = approx[i];
+        signal[i + approx_size] = detail[i];
     }
 
-    // Copy the result back to the signal
-    signal = temp; // Direct assignment
+    // Zero padding for remaining positions if signal length is odd
+    for (int i = 2 * approx_size; i < signal_length; ++i) {
+        signal[i] = 0.0f;
+    }
 }
 
-// 3D wavelet transform
-void wavelet_3d(std::vector<std::vector<std::vector<float>>>& volume, int depth, int rows, int cols, int db_num = 1) {
-    // Apply the 1D wavelet transform along the depth
-    for (int r = 0; r < rows; ++r) {
-        for (int c = 0; c < cols; ++c) {
+// Function to perform 3D DWT on a 3D volume
+void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int depth, int rows, int cols, int db_num) {
+
+    // Iterate over each depth level
+    for (int d = 0; d < depth; ++d) {
+        // Apply 1D DWT to each row
+        for (int i = 0; i < rows; ++i) {
+            dwt_1d(volume[d][i], db_num);
+        }
+
+        // Apply 1D DWT to each column
+        for (int j = 0; j < cols; ++j) {
+            std::vector<float> column(rows);
+            for (int i = 0; i < rows; ++i) {
+                column[i] = volume[d][i][j];
+            }
+            dwt_1d(column, db_num);
+            for (int i = 0; i < rows; ++i) {
+                volume[d][i][j] = column[i];
+            }
+        }
+    }
+
+    // Iterate over each row and column
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
             std::vector<float> signal(depth);
             for (int d = 0; d < depth; ++d) {
-                signal[d] = volume[d][r][c];
+                signal[d] = volume[d][i][j];
             }
-            wavelet_1d(signal, db_num);
+            // Apply 1D DWT to the depth
+            dwt_1d(signal, db_num);
             for (int d = 0; d < depth; ++d) {
-                volume[d][r][c] = signal[d];
-            }
-        }
-    }
-
-    // Apply the 1D wavelet transform along the rows
-    for (int d = 0; d < depth; ++d) {
-        for (int c = 0; c < cols; ++c) {
-            std::vector<float> signal(rows);
-            for (int r = 0; r < rows; ++r) {
-                signal[r] = volume[d][r][c];
-            }
-            wavelet_1d(signal, db_num);
-            for (int r = 0; r < rows; ++r) {
-                volume[d][r][c] = signal[r];
-            }
-        }
-    }
-
-    // Apply the 1D wavelet transform along the columns
-    for (int d = 0; d < depth; ++d) {
-        for (int r = 0; r < rows; ++r) {
-            std::vector<float> signal(cols);
-            for (int c = 0; c < cols; ++c) {
-                signal[c] = volume[d][r][c];
-            }
-            wavelet_1d(signal, db_num);
-            for (int c = 0; c < cols; ++c) {
-                volume[d][r][c] = signal[c];
+                volume[d][i][j] = signal[d];
             }
         }
     }
 }
 
-// Multi-level wavelet transform
-void multi_level_wavelet(
-    std::vector<std::vector<std::vector<float>>>& volume,
-    int& depth, int& rows, int& cols, int multi_level, int db_num) {
+// Function to perform the Multi-Level 3D DWT on a 3D volume 
+void multi_level_dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num, int multi_level) {
+    // Get the dimensions of the volume
+    int depth = volume.size();
+    int rows = volume[0].size();
+    int cols = volume[0][0].size();
 
-    // Start timer to measure time taken
-    double t = jbutil::gettime();
 
-    // Create a copy of the original volume to work on
-    auto temp_volume = volume; // Automatic memory management with std::vector
-
-    // Loop through the multi_level and apply the wavelet transform at each level
+    // Iterate over each level
     for (int i = 0; i < multi_level; ++i) {
-        // Apply the 3D wavelet transform
-        wavelet_3d(temp_volume, depth, rows, cols, db_num);
+        // Apply the 3D DWT
+        dwt_3D(volume, depth, rows, cols, db_num);
 
-        // Copy the LLL subband back to the original volume
-        for (int d = 0; d < depth / 2; ++d) {
-            for (int r = 0; r < rows / 2; ++r) {
-                for (int c = 0; c < cols / 2; ++c) {
-                    volume[d][r][c] = temp_volume[d][r][c];
-                }
-            }
-        }
-
-        // Update the dimensions for the next level
+        // Halve the dimensions for the next level without extra copying
         depth /= 2;
         rows /= 2;
         cols /= 2;
     }
-
-    // Stop timer
-    t = jbutil::gettime() - t;
-    // Show time taken
-    std::cerr << "Time taken: " << t << "s" << std::endl;
-
-    // Clear the temporary volume
-    temp_volume.clear();
 }
+
 
 // Main program entry point
 int main(int argc, char *argv[]) {
     std::cerr << "Assignment 1: Synchronous DWT on 3D CT Image" << std::endl;
 
-    if (argc != 5) { // Expecting four arguments: csv_file, output_coefficients, multi_level, db_num
-        std::cerr << "Usage: " << argv[0] << " <csv_file> <output_coefficients> <multi_level> <db_num>" << std::endl;
+    if (argc != 5) { // Expecting 3 arguments: bin_in, bin_out, db_num
+        std::cerr << "Usage: " << argv[0] << " <bin_in> <bin_out> <db_num> <multi_levle>" << std::endl;
         return EXIT_FAILURE;
     }
 
     // Load the arguments into variables
-    std::string csv_file = argv[1];
-    std::string output_coefficients = argv[2];
-    int multi_level = std::stoi(argv[3]);
-    int db_num = std::stoi(argv[4]);
+    std::string bin_in = argv[1];
+    std::string bin_out = argv[2];
+    int db_num = std::stoi(argv[3]);
+    int multi_level = std::stoi(argv[4]);
 
-    // Check if the multi_level is between 1 and 4
-    if (multi_level < 1 || multi_level > 4) {
-        std::cerr << "Error: multi_level must be between 1 and 4." << std::endl;
-        return EXIT_FAILURE;
-    }
     // Check if the db_num is between 1 and 4
     if (db_num < 1 || db_num > 4) {
         std::cerr << "Error: db_num must be between 1 and 4." << std::endl;
         return EXIT_FAILURE;
     }
 
-    // Load the CT volume from CSV file
-    std::vector<std::vector<std::vector<float>>> volume;
-    int depth, rows, cols;
-    volume = load_csv(csv_file, depth, rows, cols);
+    // Check if the multi_level is between 1 and 3
+    if (multi_level < 1 || multi_level > 3) {
+        std::cerr << "Error: multi_level must be between 1 and 3." << std::endl;
+        return EXIT_FAILURE;
+    }
 
-    // Check if the volume was loaded successfully (debugging)
+    // Load the 3D slice from the binary file
+    int depth, rows, cols;
+    std::vector<std::vector<std::vector<float>>> volume = loadvolume(bin_in);
+
+    // Check if the volume is empty
     if (volume.empty()) {
-        std::cerr << "Error loading the volume from CSV file." << std::endl;
+        std::cerr << "Error: Empty volume." << std::endl;
         return EXIT_FAILURE;
     }
     else {
-        std::cerr << "Volume loaded successfully." << std::endl;
-        // Print the dimensions of the volume (debugging)
-        std::cerr << "Volume dimensions: " << depth << " x " << rows << " x " << cols << std::endl;
+        depth = volume.size();
+        rows = volume[0].size();
+        cols = volume[0][0].size();
+        std::cerr << "Read dimensions: " << depth << "x" << rows << "x" << cols << std::endl;
     }
 
-    // Apply the multi-level wavelet transform
-    multi_level_wavelet(volume, depth, rows, cols, multi_level, db_num);
+    // Perform Multi-Level 3D DWT
+    multi_level_dwt_3D(volume, db_num, multi_level);
 
-    // Save the wavelet coefficients to a CSV file
-    save_csv(output_coefficients, volume, depth, rows, cols, multi_level);
-    
+
+    // Save the 3D volume to the binary file
+    savevolume(volume, bin_out);
+
     return EXIT_SUCCESS;
 }
