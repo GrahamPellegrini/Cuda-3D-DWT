@@ -17,6 +17,7 @@ Multi-level 3D Discrete Wavelet Transform (DWT) is a transform technique used in
 In this problem description we will handle the CHOAS dataset, which is composed of large 3D images saved in slices as .dcm files \cite{choas}. These images will first be pre-processed in python to a csv file format. The pre-processing will involve reading the .dcm files, converting them to numpy arrays, and then saving them to a csv file. The csv file will then be read and used in the cpp implementation of the 3D DWT.\\
 
 
+// Note there is no limit on the number of levels that can be performed theoretically. but in practice since the image dimensions are not infinite, the number of levels that can be performed is limited by the image dimensions. In our case at the 4 level the image dimensions will be 10*64*64. If the level is increased beyond 4 the image approximation will be too degraded to be useful.
 
 \bibliographystyle{plain}
 \bibliography{references}

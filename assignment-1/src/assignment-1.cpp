@@ -34,7 +34,7 @@ void dwt_1d(std::vector<float>& signal, int db_num) {
     std::vector<float> transformed(signal.size(), 0.0f);
 
     // Perform convolution and downsampling
-    for (int i = 0; i <= signal.size() - filter_length; i += 2) {
+    for (std::vector<float>::size_type i = 0; i <= signal.size() - filter_length; i += 2) {
         float low_sum = 0.0f, high_sum = 0.0f;
 
         // Convolve signal with filters
@@ -152,6 +152,7 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
 
 // Main program entry point
 int main(int argc, char *argv[]) {
+    (void)argc; // Suppress unused parameter warning
     // Print the program title
     std::cerr << "Assignment 1: Synchronous Multi DWT on 3D CT Image" << std::endl;
 
@@ -163,7 +164,6 @@ int main(int argc, char *argv[]) {
     std::string bin_out = argv[2];
     int db_num = std::stoi(argv[3]);
     int levels = std::stoi(argv[4]);
-    // Note there is no limit on the number of levels that can be performed theoretically. but in practice since the image dimensions are not infinite, the number of levels that can be performed is limited by the image dimensions. In our case at the 4 level the image dimensions will be 10*64*64. If the level is increased beyond 4 the image approximation will be too degraded to be useful.
 
     // Check if the db_num is between 1 and 4
     assert(db_num >= 1 && db_num <= 4 && "db_num must be between 1 and 4");

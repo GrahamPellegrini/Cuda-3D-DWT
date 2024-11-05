@@ -33,8 +33,8 @@ void savevolume(const std::vector<std::vector<std::vector<float>>>& volume, cons
     }
 
     // Show the file dimensions written and check if the file is written correctly
-    assert(file.tellp() == sizeof(depth) + sizeof(rows) + sizeof(cols) + depth * rows * cols * sizeof(float) && "Error writing to file");
-    
+    assert(file.tellp() == static_cast<std::streamoff>(sizeof(depth) + sizeof(rows) + sizeof(cols) + depth * rows * cols * sizeof(float)) && "Error writing to file");
+
     file.close();
 }
 
