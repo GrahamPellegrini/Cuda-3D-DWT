@@ -2,18 +2,20 @@
 #include <vector>
 #include <stdexcept>
 #include <cmath>
+#include <cassert>
 #include "../include/loadbin.h"
 #include "../include/savebin.h"
 #include "../../code/shared/jbutil.h"
 
 // Define the wavelet coefficients as floats
+// Low coefficients
 const std::vector<std::vector<float>> db_low = {
     {0.70710678f, 0.70710678f}, // db1
     {-0.12940952f, 0.22414387f, 0.83651630f, 0.48296291f}, // db2
     {0.03522629f, -0.08544127f, -0.13501102f, 0.45987750f, 0.80689151f, 0.33267055f}, // db3
     {-0.01059740f, 0.03288301f, 0.03084138f, -0.18703481f, -0.02798377f, 0.63088077f, 0.71484657f, 0.23037781f} // db4
 };
-
+// High coefficients
 const std::vector<std::vector<float>> db_high = {
     {-0.70710678f, 0.70710678f}, // db1
     {-0.48296291f, 0.83651630f, -0.22414387f, -0.12940952f}, // db2
@@ -21,49 +23,33 @@ const std::vector<std::vector<float>> db_high = {
     {-0.23037781f, 0.71484657f, -0.63088077f, -0.02798377f, 0.18703481f, 0.03084138f, -0.03288301f, -0.01059740f} // db4
 };
 
+// Function to perform 1D DWT on a signal
 void dwt_1d(std::vector<float>& signal, int db_num) {
-    if (db_num < 1 || db_num > 4) {
-        std::cerr << "Invalid db_num. Please select from db1, db2, db3, or db4." << std::endl;
-        return;
-    }
-
     // Retrieve the low-pass and high-pass filters based on db_num
-    const std::vector<float>& low_filter = db_low[db_num - 1];
-    const std::vector<float>& high_filter = db_high[db_num - 1];
+    const auto& low_filter = db_low[db_num - 1];
+    const auto& high_filter = db_high[db_num - 1];
     int filter_length = low_filter.size();
 
-    // Prepare vectors to store results temporarily
-    int approx_size = (signal.size() + 1) / 2;
-    std::vector<float> approx(approx_size, 0.0f);
-    std::vector<float> detail(approx_size, 0.0f);
+    // Prepare vector for DWT output
+    std::vector<float> transformed(signal.size(), 0.0f);
 
     // Perform convolution and downsampling
-    int signal_length = signal.size();
-    for (int i = 0; i <= signal_length - filter_length; i += 2) {
-        float low_sum = 0.0f;
-        float high_sum = 0.0f;
+    for (int i = 0; i <= signal.size() - filter_length; i += 2) {
+        float low_sum = 0.0f, high_sum = 0.0f;
 
-        // Apply filters
+        // Convolve signal with filters
         for (int j = 0; j < filter_length; ++j) {
             low_sum += signal[i + j] * low_filter[j];
             high_sum += signal[i + j] * high_filter[j];
         }
 
-        // Store the results in the approximation and detail vectors
-        approx[i / 2] = low_sum;
-        detail[i / 2] = high_sum;
+        // Store results in transformed vector
+        transformed[i / 2] = low_sum;
+        transformed[i / 2 + signal.size() / 2] = high_sum;
     }
 
-    // Copy the approximation and detail coefficients back to the original signal vector
-    for (int i = 0; i < approx_size; ++i) {
-        signal[i] = approx[i];
-        signal[i + approx_size] = detail[i];
-    }
-
-    // Zero padding for remaining positions if signal length is odd
-    for (int i = 2 * approx_size; i < signal_length; ++i) {
-        signal[i] = 0.0f;
-    }
+    // Copy transformed result back into signal
+    signal = transformed;
 }
 
 // Function to perform 3D DWT on a 3D volume
@@ -111,13 +97,16 @@ void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
     
 }
 
+// Function to perform multi-level 3D DWT on a 3D volume
 void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_num, int levels) {
     // Start timer to measure time taken
     double t = jbutil::gettime();
 
+    // Get the shape of the volume
     int depth = volume.size();
     int rows = volume[0].size();
     int cols = volume[0][0].size();
+
     // Iterate over each level
     for (int i = 0; i < levels; i++) {
         // Perform 3D DWT on the volume
@@ -129,8 +118,9 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
             depth = (depth + 1) / 2;
             rows = (rows + 1) / 2;
             cols = (cols + 1) / 2;
+            // Note we add 1 before dividing by 2 to ensure that the dimensions are rounded up if they are odd
 
-            // rezise the volume to the new dimensions
+            // Rezise the volume to the new dimensions which captures the approximation coefficients (LLL)
             volume.resize(depth);
             for (int d = 0; d < depth; ++d) {
                 volume[d].resize(rows);
@@ -145,41 +135,44 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
     
     // Stop timer
     t = jbutil::gettime() - t;
-    // Display the Process that took place
-    std::cerr << "Multi-level 3D DWT with " << levels << " levels and db" << db_num << " wavelet" << std::endl;
-    // Show time taken
-    std::cerr << "Time taken: " << t << "s" << std::endl;
+    // Log a success message
+    std::cerr << "Multi-level DWT completed successfully with " 
+            << levels << " levels and db_num " << db_num << std::endl;
+
+    // If there's a condition you want to assert, do that separately
+    assert(levels > 0 && "Levels should be greater than 0 after processing.");
+
+    // Log the time taken
+    std::cerr << "Time taken: " << t << " seconds" << std::endl;
+
+    // Assert a condition if necessary
+    assert(t >= 0 && "Time taken should be non-negative.");
 }
 
 
 // Main program entry point
 int main(int argc, char *argv[]) {
-    std::cerr << "Assignment 1: Synchronous DWT on 3D CT Image" << std::endl;
+    // Print the program title
+    std::cerr << "Assignment 1: Synchronous Multi DWT on 3D CT Image" << std::endl;
 
-    if (argc != 5) { // Expecting 3 arguments: bin_in, bin_out, db_num
-        std::cerr << "Usage: " << argv[0] << " <bin_in> <bin_out> <db_num> <multi_level>" << std::endl;
-        return EXIT_FAILURE;
-    }
+    // Check if the number of arguments is correct
+    assert(argc == 5 && "Usage: ./assignment-1 <input.bin> <output.bin> <db_num> <levels>");
 
     // Load the arguments into variables
     std::string bin_in = argv[1];
     std::string bin_out = argv[2];
     int db_num = std::stoi(argv[3]);
     int levels = std::stoi(argv[4]);
+    // Note there is no limit on the number of levels that can be performed theoretically. but in practice since the image dimensions are not infinite, the number of levels that can be performed is limited by the image dimensions. In our case at the 4 level the image dimensions will be 10*64*64. If the level is increased beyond 4 the image approximation will be too degraded to be useful.
 
     // Check if the db_num is between 1 and 4
-    if (db_num < 1 || db_num > 4) {
-        std::cerr << "Error: db_num must be between 1 and 4." << std::endl;
-        return EXIT_FAILURE;
-    }
+    assert(db_num >= 1 && db_num <= 4 && "db_num must be between 1 and 4");
 
     // Load the 3D slice from the binary file
-    int depth, rows, cols;
     std::vector<std::vector<std::vector<float>>> volume = loadvolume(bin_in);
 
     // Perform the multi-level DWT on the 3D volume
     multi_level(volume, db_num, levels);
-
 
     // Save the 3D volume to the binary file
     savevolume(volume, bin_out);

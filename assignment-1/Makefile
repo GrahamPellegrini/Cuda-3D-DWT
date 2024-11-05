@@ -1,12 +1,6 @@
 # Compiler
 CXX = g++
 
-# Compiler flags
-CXXFLAGS = -Wall -Wextra -std=c++11 -g
-
-# -nd for not debug and -d for debug 
-# remove optimization flag for debug -o0
-
 # Directories
 SRC_DIR = ./src
 BIN_DIR = ./bin
@@ -17,17 +11,29 @@ SRCS = $(SRC_DIR)/assignment-1.cpp
 OBJS = $(BIN_DIR)/assignment-1.o
 
 # Executable files
-TARGETS = $(BIN_DIR)/assignment-1
+TARGET = $(BIN_DIR)/assignment-1
 
 # Default target
-all: $(TARGETS)
+all: release
+
+# Build configuration flags
+DEBUG_FLAGS = -Wall -Wextra -std=c++11 -g -O0
+RELEASE_FLAGS = -Wall -Wextra -std=c++11 -O2 -DNDEBUG
 
 # Ensure bin directory exists
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
+# Debug build
+debug: CXXFLAGS = $(DEBUG_FLAGS)
+debug: $(TARGET)
+
+# Release build
+release: CXXFLAGS = $(RELEASE_FLAGS)
+release: $(TARGET)
+
 # Rule to build the executable
-$(BIN_DIR)/assignment-1: $(BIN_DIR)/assignment-1.o | $(BIN_DIR)
+$(BIN_DIR)/assignment-1: $(OBJS) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^ -I$(INC_DIR)
 
 # Rule to compile source files to object files
@@ -36,4 +42,4 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BIN_DIR)
 
 # Clean up
 clean:
-	rm -f $(OBJS) $(TARGETS)
+	rm -f $(OBJS) $(TARGET)
