@@ -20,9 +20,6 @@ std::vector<std::vector<std::vector<float>>> loadvolume(const std::string& filen
     file.read(reinterpret_cast<char*>(&rows), sizeof(rows));
     file.read(reinterpret_cast<char*>(&cols), sizeof(cols));
 
-    // Debug prints to verify dimensions
-    std::cerr << "Read dimensions: " << depth << "x" << rows << "x" << cols << std::endl;
-
     // Initialize the 3D vector
     std::vector<std::vector<std::vector<float>>> volume(depth, std::vector<std::vector<float>>(rows, std::vector<float>(cols)));
 
@@ -31,6 +28,15 @@ std::vector<std::vector<std::vector<float>>> loadvolume(const std::string& filen
         for (int r = 0; r < rows; ++r) {
             file.read(reinterpret_cast<char*>(volume[d][r].data()), cols * sizeof(float));
         }
+    }
+
+    // Check if the volume is empty
+    if (volume.empty()) {
+        throw std::runtime_error("Volume is empty.");
+    }
+    else {
+        std::cerr << "Volume loaded successfully from " << filename << std::endl;
+        std::cerr << "Depth: " << depth << ", Rows: " << rows << ", Cols: " << cols << std::endl;
     }
 
     file.close();

@@ -4,6 +4,9 @@ CXX = g++
 # Compiler flags
 CXXFLAGS = -Wall -Wextra -std=c++11 -g
 
+# -nd for not debug and -d for debug 
+# remove optimization flag for debug -o0
+
 # Directories
 SRC_DIR = ./src
 BIN_DIR = ./bin

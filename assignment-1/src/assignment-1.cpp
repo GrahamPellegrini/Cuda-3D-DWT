@@ -66,34 +66,12 @@ void dwt_1d(std::vector<float>& signal, int db_num) {
     }
 }
 
-void haar_1d(std::vector<float>& signal) {
-    int signal_length = signal.size();
-    int approx_size = (signal_length + 1) / 2;
-
-    // Prepare vectors to store results temporarily
-    std::vector<float> approx(approx_size, 0.0f);
-    std::vector<float> detail(approx_size, 0.0f);
-
-    // Perform convolution and downsampling
-    for (int i = 0; i < approx_size; ++i) {
-        approx[i] = (signal[2 * i] + signal[2 * i + 1]) / 2.0f;
-        detail[i] = (signal[2 * i] - signal[2 * i + 1]) / 2.0f;
-    }
-
-    // Copy the approximation and detail coefficients back to the original signal vector
-    for (int i = 0; i < approx_size; ++i) {
-        signal[i] = approx[i];
-        signal[i + approx_size] = detail[i];
-    }
-
-    // Zero padding for remaining positions if signal length is odd
-    for (int i = 2 * approx_size; i < signal_length; ++i) {
-        signal[i] = 0.0f;
-    }
-}
-
 // Function to perform 3D DWT on a 3D volume
-void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int depth, int rows, int cols, int db_num) {
+void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
+    // Get the shape of the volume
+    int depth = volume.size();
+    int rows = volume[0].size();
+    int cols = volume[0][0].size();
 
     // Iterate over each depth level
     for (int d = 0; d < depth; ++d) {
@@ -129,26 +107,48 @@ void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int depth, int
             }
         }
     }
+
+    
 }
 
-// Function to perform the Multi-Level 3D DWT on a 3D volume 
-void multi_level_dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num, int multi_level) {
-    // Get the dimensions of the volume
+void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_num, int levels) {
+    // Start timer to measure time taken
+    double t = jbutil::gettime();
+
     int depth = volume.size();
     int rows = volume[0].size();
     int cols = volume[0][0].size();
-
-
     // Iterate over each level
-    for (int i = 0; i < multi_level; ++i) {
-        // Apply the 3D DWT
-        dwt_3D(volume, depth, rows, cols, db_num);
+    for (int i = 0; i < levels; i++) {
+        // Perform 3D DWT on the volume
+        dwt_3D(volume, db_num);
 
-        // Halve the dimensions for the next level without extra copying
-        depth /= 2;
-        rows /= 2;
-        cols /= 2;
+        // If it is not the last level
+        if (i != levels - 1) {
+            // Halve the dimensions of the volume
+            depth = (depth + 1) / 2;
+            rows = (rows + 1) / 2;
+            cols = (cols + 1) / 2;
+
+            // rezise the volume to the new dimensions
+            volume.resize(depth);
+            for (int d = 0; d < depth; ++d) {
+                volume[d].resize(rows);
+                for (int r = 0; r < rows; ++r) {
+                    volume[d][r].resize(cols);
+                }
+            }
+            
+        }
     }
+
+    
+    // Stop timer
+    t = jbutil::gettime() - t;
+    // Display the Process that took place
+    std::cerr << "Multi-level 3D DWT with " << levels << " levels and db" << db_num << " wavelet" << std::endl;
+    // Show time taken
+    std::cerr << "Time taken: " << t << "s" << std::endl;
 }
 
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Assignment 1: Synchronous DWT on 3D CT Image" << std::endl;
 
     if (argc != 5) { // Expecting 3 arguments: bin_in, bin_out, db_num
-        std::cerr << "Usage: " << argv[0] << " <bin_in> <bin_out> <db_num> <multi_levle>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <bin_in> <bin_out> <db_num> <multi_level>" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     std::string bin_in = argv[1];
     std::string bin_out = argv[2];
     int db_num = std::stoi(argv[3]);
-    int multi_level = std::stoi(argv[4]);
+    int levels = std::stoi(argv[4]);
 
     // Check if the db_num is between 1 and 4
     if (db_num < 1 || db_num > 4) {
@@ -173,30 +173,12 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    // Check if the multi_level is between 1 and 3
-    if (multi_level < 1 || multi_level > 3) {
-        std::cerr << "Error: multi_level must be between 1 and 3." << std::endl;
-        return EXIT_FAILURE;
-    }
-
     // Load the 3D slice from the binary file
     int depth, rows, cols;
     std::vector<std::vector<std::vector<float>>> volume = loadvolume(bin_in);
 
-    // Check if the volume is empty
-    if (volume.empty()) {
-        std::cerr << "Error: Empty volume." << std::endl;
-        return EXIT_FAILURE;
-    }
-    else {
-        depth = volume.size();
-        rows = volume[0].size();
-        cols = volume[0][0].size();
-        std::cerr << "Read dimensions: " << depth << "x" << rows << "x" << cols << std::endl;
-    }
-
-    // Perform Multi-Level 3D DWT
-    multi_level_dwt_3D(volume, db_num, multi_level);
+    // Perform the multi-level DWT on the 3D volume
+    multi_level(volume, db_num, levels);
 
 
     // Save the 3D volume to the binary file

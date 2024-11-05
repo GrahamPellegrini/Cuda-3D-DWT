@@ -29,6 +29,15 @@ void savevolume(const std::vector<std::vector<std::vector<float>>>& volume, cons
         }
     }
 
+    // Check if the write was successful
+    if (!file.good()) {
+        throw std::runtime_error("Error writing to file: " + filename);
+    }
+    else {
+        std::cerr << "Volume saved to " << filename << std::endl;
+        std::cerr << "Dimensions: " << depth << "x" << rows << "x" << cols << std::endl;
+    }
+
     file.close();
 }
 

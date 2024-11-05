@@ -66,32 +66,6 @@ void dwt_1d(std::vector<float>& signal, int db_num) {
     }
 }
 
-void haar_1d(std::vector<float>& signal) {
-    int signal_length = signal.size();
-    int approx_size = (signal_length + 1) / 2;
-
-    // Prepare vectors to store results temporarily
-    std::vector<float> approx(approx_size, 0.0f);
-    std::vector<float> detail(approx_size, 0.0f);
-
-    // Perform convolution and downsampling
-    for (int i = 0; i < approx_size; ++i) {
-        approx[i] = (signal[2 * i] + signal[2 * i + 1]) / 2.0f;
-        detail[i] = (signal[2 * i] - signal[2 * i + 1]) / 2.0f;
-    }
-
-    // Copy the approximation and detail coefficients back to the original signal vector
-    for (int i = 0; i < approx_size; ++i) {
-        signal[i] = approx[i];
-        signal[i + approx_size] = detail[i];
-    }
-
-    // Zero padding for remaining positions if signal length is odd
-    for (int i = 2 * approx_size; i < signal_length; ++i) {
-        signal[i] = 0.0f;
-    }
-}
-
 // Function to perform 3D DWT on a 3D volume
 void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
     // Get the shape of the volume
