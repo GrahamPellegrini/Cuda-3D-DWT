@@ -1,3 +1,6 @@
 code/assignment-1/output.csv filter=lfs diff=lfs merge=lfs -text
 code/assignment-1/volume.csv filter=lfs diff=lfs merge=lfs -text
 code/assignment-1/Wavelet.ipynb filter=lfs diff=lfs merge=lfs -text
+assignment-1/file/single_db2.bin filter=lfs diff=lfs merge=lfs -text
+assignment-1/file/single_haar.bin filter=lfs diff=lfs merge=lfs -text
+cce3015-venv/lib/python3.10/site-packages/cv2/cv2.abi3.so filter=lfs diff=lfs merge=lfs -text
