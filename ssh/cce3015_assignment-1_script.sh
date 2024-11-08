@@ -24,4 +24,5 @@ else
    echo Virtual environment not found!
 fi
 
-jupyter nbconvert --execute --to notebook --output "ipynb_test" --output-dir "/opt/users/gpel0001/cce3207" "/opt/users/gpel0001/cce3207/ipynb_test_clear.ipynb"
+# Run your C++ binary with the desired arguments for assignment 1
+assignment-1/bin/assignment-1 assignment-1/file/input.bin assignment-1/file/three_db2.bin 2 3
