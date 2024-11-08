@@ -99,8 +99,8 @@ void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
 
 // Function to perform multi-level 3D DWT on a 3D volume
 void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_num, int levels) {
-    // Start timer to measure time taken
-    double t = jbutil::gettime();
+    // Start timer to measure time taken for DWT
+    double dwt_t = jbutil::gettime();
 
     // Get the shape of the volume
     int depth = volume.size();
@@ -134,19 +134,18 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
 
     
     // Stop timer
-    t = jbutil::gettime() - t;
+    dwt_t = jbutil::gettime() - dwt_t;
     // Log a success message
-    std::cerr << "Multi-level DWT completed successfully with " 
-            << levels << " levels and db_num " << db_num << std::endl;
+    //std::cerr << "Multi-level DWT completed successfully with "             << levels << " levels and db_num " << db_num << std::endl;
 
     // If there's a condition you want to assert, do that separately
     assert(levels > 0 && "Levels should be greater than 0 after processing.");
 
-    // Log the time taken
-    std::cerr << "Time taken: " << t << " seconds" << std::endl;
+    // Log the time taken for the DWT
+    std::cerr << "Time taken (DWT): " << dwt_t << " seconds" << std::endl;
 
     // Assert a condition if necessary
-    assert(t >= 0 && "Time taken should be non-negative.");
+    assert(dwt_t >= 0 && "Time taken should be non-negative.");
 }
 
 
@@ -158,6 +157,9 @@ int main(int argc, char *argv[]) {
 
     // Check if the number of arguments is correct
     assert(argc == 5 && "Usage: ./assignment-1 <input.bin> <output.bin> <db_num> <levels>");
+
+    // Start the global timer
+    double t = jbutil::gettime();
 
     // Load the arguments into variables
     std::string bin_in = argv[1];
@@ -176,6 +178,15 @@ int main(int argc, char *argv[]) {
 
     // Save the 3D volume to the binary file
     savevolume(volume, bin_out);
+
+    // Stop the global timer
+    t = jbutil::gettime() - t;
+
+    // Log a success message
+    // std::cerr << "Program completed successfully" << std::endl;
+    
+    // Log the time taken for the program
+    std::cerr << "Total time taken: " << t << " seconds" << std::endl;
 
     return EXIT_SUCCESS;
 }

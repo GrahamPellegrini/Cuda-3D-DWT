@@ -37,7 +37,6 @@ std::vector<std::vector<std::vector<float>>> loadvolume(const std::string& filen
     assert(!volume.empty() && "Volume is empty."); 
     assert(depth > 0 && rows > 0 && cols > 0 && "Invalid dimensions."); 
 
-
     file.close();
     return volume;
 }

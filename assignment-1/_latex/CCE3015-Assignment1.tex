@@ -29,10 +29,10 @@ In the preprocessing step, to achieve a 3D volume from 2D slices. The slices are
 \subsection{Algorithm Overview}
 To implement the 3D DWT in C++, we will follow these key steps:\\
 
-\textbf{Input/Output Handling:} Two utility header files will be included, one to load the binary data into a 3D volume array and another to save the processed data back into a binary file. These functions will facilitate data handling between Python and C++.\\
+\textbf{Input/Output Handling} - Two utility header files will be included, one to load the binary data into a 3D volume array and another to save the processed data back into a binary file. These functions will facilitate data handling between Python and C++.\\
 
 
-\textbf{Wavelet Coefficients:} Daubechies wavelet filters will be used, taking from db1 till db4. These filter coefficients will directly be sampled from pywavelets, for comparison purposes.These coefficients will be hardcoded as vectors with seperation between low-pass and high-pass filters. The filters will be applied to the 3D data in the convolution step. Having the low filters and high filters seperated will allow for easy implementation of the convolution step. The low emphasise the approximation coefficients and the high emphasise the detail coefficients of the signal.\\
+\textbf{Wavelet Coefficients} - Daubechies wavelet filters will be used, taking from db1 till db4. These filter coefficients will directly be sampled from pywavelets, for comparison purposes.These coefficients will be hardcoded as vectors with seperation between low-pass and high-pass filters. The filters will be applied to the 3D data in the convolution step. Having the low filters and high filters seperated will allow for easy implementation of the convolution step. The low emphasise the approximation coefficients and the high emphasise the detail coefficients of the signal.\\
 
 \textbf{Discrete Wavelet Transform (DWT):} 
 \begin{figure}
@@ -55,7 +55,7 @@ This 1D DWT function will then be called three times in the 3D DWT function, as 
 
 The importance of always saving back the L and H subbands to the original volume is so we utalise memory efficiently, especially since we are working with 3d vectors of a large dataset.
 
-\textbf{Multi-level Transform:} Our implementation aims at achieving Multi-level 3D DWT. This means we can take the approximation coefficients (LLL) from the first level and apply the 3D DWT again to get the approximation coefficients of the next level. This process can be repeated for as many levels as desired. However, it is important to note that while there is no theoretical limit to the number of levels, practical constraints are imposed by the image dimensions. In our case since the slices have dimensions of 78x256x256, a 4-level decomposition results in dimensions of 10x64x64, beyond which further decomposition would degrade image quality excessively.\\
+\textbf{Multi-level Transform} - Our implementation aims at achieving Multi-level 3D DWT. This means we can take the approximation coefficients (LLL) from the first level and apply the 3D DWT again to get the approximation coefficients of the next level. This process can be repeated for as many levels as desired. However, it is important to note that while there is no theoretical limit to the number of levels, practical constraints are imposed by the image dimensions. In our case since the slices have dimensions of 78x256x256, a 4-level decomposition results in dimensions of 10x64x64, beyond which further decomposition would degrade image quality excessively.\\
 
 A multi-level function will be defined that will call the 3D DWT function for the number of levels specified. If the level is not the final one then the volume dimensions will be halved along each axis, taking the approximation coefficients (LLL) and applying the 3D DWT function to them. In this process the higher level detail coefficients are discarded but they are not needed.\\
  
@@ -65,27 +65,41 @@ To be able to handle odd dimensions, either the dimention division must handle o
 To evaluate the implementation, we will have a post-processing step in Python. The saved output binary file will be loaded back into Python, and the 3D volume will be reconstructed from the subbands. This reconstructed coefficients will be compared to those achieved on the same volume with pywavelets. The comparison will be both visual and quantitative, using metrics like Mean Squared Error (MSE) and Eucaledian Distance. Although, we will be using the same coefficients as pywavelets, there might still be some differences in implementation. Such as the convolution, downsampling techniques and padding techniques. So the graphical comparison will be the main objective and then the statistical comparison will be a bonus to see how close the implementation is to the pywavelets implementation.\\
 
 \section{Question 2}
-To plan an efficient parallel implementation of the 3D Discrete Wavelet Transform (DWT) using CUDA, we analyze the operations that can be vectorized and optimized to exploit parallelism across the GPU's architecture. 
+To plan an efficient parallel implementation of the 3D Discrete Wavelet Transform (DWT) using CUDA, we analyze the operations that can be vectorized and optimized whilst handeling the issue of synchronization across the architecture.
 
 \subsection{Identifying Parallel Operations}
-In the DWT process, each dimension of the 3D volume undergoes convolution with wavelet filters. This can be done in parallel for each row, column, and depth slice independently. By assigning each thread to handle a single 1D operation, such as convolution in the depth or row dimension, we maximize parallel processing across GPU threads. 
+In the DWT process, each dimension of the 3D volume undergoes convolution with wavelet filters. This process is currently implemented sequentially, as each dimension is processed one after the other. However, this can be parallelized by using thread blocks in CUDA to process each dimension concurrently. We note that in GPU programming, the number of threads per block and blocks in the grid is a crucial parameter that must be manually tested to find the optimal values for the particular GPU setup. At the same time, we must avoid overfitting to the GPU's capabilities as this may reduce performance from one system to another or even one dataset to another.\\
+
+So the configured threading of the individual DWT in the 3D DWT function will be one step of the parallelization from which performance can benefit. Instead of processing individual elements of the 3D volume sequentially, we can use CUDA to launch kernels that handle the 1D DWT on different parts of the volume concurrently. This allows multiple elements of the volume to be accessed and processed in parallel, significantly improving performance.\\
+
+Since we are parallelizing the data processing, we must revise the loops present to handle the parallel execution. By configuring the number of threads per block and blocks in the grid, we can ensure that the data is processed efficiently in parallel. This will reduce the overhead associated with sequential processing, thus enhancing efficiency.\\
+
+The I/O operations, such as loading and saving to binary files, can also be parallelized. This involves reading the 3D volume's dimensions and allocating the required memory in the GPU's global memory. CUDA kernels can then be used to read and process the data from/to the binary file in parallel. After the kernel processes the data, it is copied back to the host memory, completing the loading or saving of the volume from/to the binary file.\\
 
 \subsection{Required Synchronization Points}
-Synchronization points are necessary when switching between different dimensions of the 3D array (e.g., moving from row operations to column operations). This ensures data consistency before threads process the next dimension. CUDA’s `__syncthreads()` can be used here to synchronize threads within each block.
+In CUDA programming, synchronization points are necessary to ensure data consistency and correct execution order. The need for synchronization arises due to data dependencies, shared memory usage, and the sequential nature of kernel launches.\\
 
-\subsection{Planning Sequence of Functions and Mapping to CUDA Architecture}
-1. **Data Loading**: First, data is loaded onto the GPU's global memory. Each dimension is then processed independently in parallel.
+This is why identifying synchronization points is essential to ensure data consistency and correct execution order. Preventing race conditions and ensuring the correctness of the DWT process.\\
+
+\textbf{Within 1D DWT Kernel} - After each stage of computation within the kernel, a synchronization point is required to ensure all threads have completed their convolution and downsampling operations before proceeding. This can be achieved by synchronizing the threads with the respective fucntion.\\
+
+\textbf{Between 1D DWT Kernels} - After launching the 1D DWT for rows, columns, and depth slices, synchronization is required to ensure the 1D DWT on rows is completed before starting the 1D DWT on columns, and similarly for depth slices. If this is not done, then the data will be corrupted as the next DWT will be applied to the data before the previous DWT has been applied. This synchronization point will essentially have to slow down the process with a theoretical wait but is a necessary step coming from the algorithms' sequential nature.\\
+
+\textbf{Multi-Level DWT} - Between levels in the multi-level function, synchronization is required to ensure the DWT for the current level is completed before resizing the volume and starting the next level. This is important as the data from the previous level is required to be processed in the next level. Once again this comes from the sequential nature of the algorithm and the need to process the data in a specific order.\\
+
+Both the multi-level synchronization and the between 1D DWT kernels synchronization can be handled by synchronizing the cuda threaded devices with the respective function.\\ 
+
+\subsection{Secquenced Plan for CUDA Implementation}
+Following the above analysis, we can outline a sequenced plan for the CUDA implementation of the 3D DWT process:
+
+\textbf{Handling I/O Operations} - The I/O operations, such as loading and saving the 3D volume data, will be handled by CUDA functions that read and write data from/to binary files. The loading in particular will handle the data to be loaded into the GPU's global memory. This set's up the data for parallel processing using CUDA and involves allocating memory on the GPU and copying the data from the host to the device.\\
+
+\textbf{Performing 1D DWT on Rows, Columns, and Depth Slices} - The 1D DWT will be applied to the rows, columns, and depth slices of the 3D volume concurrently using CUDA kernels. Each kernel will process a row, column, or depth slice of the volume, applying the 1D DWT using wavelet filters. Synchronization within the kernel will be achieved to ensure correct execution order.\\
    
-2. **1D DWT on Rows and Columns**: Each 1D DWT operation is assigned to CUDA threads in a grid-block configuration. Using CUDA vectors for 3D volumes will reduce clock cycles due to memory coalescing.
-   
-3. **Loop Unrolling**: Unrolling inner loops of the convolution operations reduces the overhead associated with branch predictions, thus enhancing efficiency. For fixed wavelet filter sizes, this technique is particularly effective as it minimizes loop iteration overheads.
+\textbf{Multi-Level DWT} - The multi-level DWT function will be implemented using CUDA, applying the 3D DWT multiple times to achieve multi-level decomposition. Handling the halving of the dimensions between levels and synchronization points to ensure data consistency and correct execution order.\\
 
-4. **Block and Thread Selection**: Choosing the number of blocks and threads requires careful consideration to avoid underutilizing or overfitting to the GPU’s capabilities. Optimal values are initially estimated based on input dimensions and then fine-tuned through testing to balance computational load. However, tuning may risk overfitting to specific datasets, reducing performance on varied data.
+\textbf{Selecting Block and Thread Sizes} - Once a stable implementation is achieved, the number of threads per block and blocks in the grid will be manually tested to find the optimal values for the particular GPU setup. This will involve testing different configurations to maximize GPU utilization while avoiding overfitting to the GPU's capabilities.\\
 
-5. **Multi-Level Processing and Halving Dimensions**: At each level, the array size is halved, further reducing the workload for subsequent levels. After each level, threads synchronize to ensure data integrity before proceeding.
+By mapping these functions to the CUDA architecture, we can leverage the parallel processing capabilities of the GPU to significantly improve the performance of the DWT process on a 3D volume. Synchronization points are carefully placed to ensure data consistency and correct execution order, preventing race conditions and ensuring the correctness of the DWT process.
 
-This design aligns well with the CUDA architecture by mapping independent tasks to separate threads, utilizing shared memory for intermediate results, and applying loop unrolling for efficiency in repetitive convolution tasks.
-
---okay so maybe mention points on vectorizing since we have a 3D volume if we perform them as CUDA vectors they will computationally take take less clock cycles. Mention how you would loop unroll ect...
---Mention that the amount of blocks /threads would be chosen and some parameters are trivial and must be tested manually but could run into the problem of overfitting.
 \end{document}
