@@ -3,9 +3,10 @@
 #include <stdexcept>
 #include <cmath>
 #include <cassert>
+#include <chrono>
 #include "../include/loadbin.h"
 #include "../include/savebin.h"
-#include "../../code/shared/jbutil.h"
+
 
 // Define the wavelet coefficients as floats
 // Low coefficients
@@ -100,7 +101,7 @@ void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
 // Function to perform multi-level 3D DWT on a 3D volume
 void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_num, int levels) {
     // Start timer to measure time taken for DWT
-    double dwt_t = jbutil::gettime();
+    auto dwt_s = std::chrono::high_resolution_clock::now();
 
     // Get the shape of the volume
     int depth = volume.size();
@@ -134,7 +135,9 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
 
     
     // Stop timer
-    dwt_t = jbutil::gettime() - dwt_t;
+    auto dwt_e= std::chrono::high_resolution_clock::now();
+    // Calculate the duration
+    std::chrono::duration<double> dwt_d = dwt_e - dwt_s;
     // Log a success message
     //std::cerr << "Multi-level DWT completed successfully with "             << levels << " levels and db_num " << db_num << std::endl;
 
@@ -142,10 +145,10 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
     assert(levels > 0 && "Levels should be greater than 0 after processing.");
 
     // Log the time taken for the DWT
-    std::cerr << "Time taken (DWT): " << dwt_t << " seconds" << std::endl;
+    std::cerr << "Time taken (DWT): " << dwt_d.count() << " seconds" << std::endl;
 
     // Assert a condition if necessary
-    assert(dwt_t >= 0 && "Time taken should be non-negative.");
+    assert(dwt_d.count() >= 0 && "Time taken should be non-negative.");
 }
 
 
@@ -159,7 +162,7 @@ int main(int argc, char *argv[]) {
     assert(argc == 5 && "Usage: ./assignment-1 <input.bin> <output.bin> <db_num> <levels>");
 
     // Start the global timer
-    double t = jbutil::gettime();
+    auto start = std::chrono::high_resolution_clock::now();
 
     // Load the arguments into variables
     std::string bin_in = argv[1];
@@ -180,13 +183,15 @@ int main(int argc, char *argv[]) {
     savevolume(volume, bin_out);
 
     // Stop the global timer
-    t = jbutil::gettime() - t;
+    auto end = std::chrono::high_resolution_clock::now();
+    // Calculate the duration
+    std::chrono::duration<double> t = end - start;
 
     // Log a success message
     // std::cerr << "Program completed successfully" << std::endl;
     
     // Log the time taken for the program
-    std::cerr << "Total time taken: " << t << " seconds" << std::endl;
+    std::cerr << "Total time taken: " << t.count()<< " seconds" << std::endl;
 
     return EXIT_SUCCESS;
 }
