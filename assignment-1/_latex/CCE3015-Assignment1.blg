@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2022/dev/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: CCE3015-Assignment1.aux
+The style file: ieeetr.bst
+Database file #1: references.bib
+Warning--entry type for "CHAOSdata2019" isn't style-file defined
+--line 1 of file references.bib
+You've used 3 entries,
+            1876 wiz_defined-function locations,
+            497 strings with 4092 characters,
+and the built_in function-call counts, 499 in all, are:
+= -- 37
+> -- 25
+< -- 0
++ -- 10
+- -- 7
+* -- 33
+:= -- 83
+add.period$ -- 4
+call.type$ -- 3
+change.case$ -- 3
+chr.to.int$ -- 0
+cite$ -- 3
+duplicate$ -- 21
+empty$ -- 61
+format.name$ -- 7
+if$ -- 116
+int.to.chr$ -- 0
+int.to.str$ -- 3
+missing$ -- 1
+newline$ -- 13
+num.names$ -- 3
+pop$ -- 20
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 9
+stack$ -- 0
+substring$ -- 0
+swap$ -- 1
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 0
+while$ -- 3
+width$ -- 4
+write$ -- 28
+(There was 1 warning)
