@@ -12,3 +12,17 @@ big_building.pgm
 *.log
 *.tmp
 node_modules/
+
+# Ignore Python virtual environment directories and cache files
+venv/
+.env/
+*.pyc
+__pycache__/
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+
+# Ignore backup files
+*~
+*.bak
