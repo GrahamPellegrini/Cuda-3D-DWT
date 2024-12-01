@@ -1,0 +1,26 @@
+Running on ict-d0-01
+   TRES=cpu=1,mem=4G,node=1,billing=1,gres/gpu=1,gres/gpu:ampere=1
+   JOB_GRES=gpu:ampere:1
+     Nodes=ict-d0-01 CPU_IDs=0-1 Mem=4096 GRES=gpu:ampere:1(IDX:0)
+CUDA_VISIBLE_DEVICES=0
+Sun Dec  1 16:12:38 2024       
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.171.04             Driver Version: 535.171.04   CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  NVIDIA GeForce RTX 3060        Off | 00000000:01:00.0 Off |                  N/A |
+|  0%   53C    P8              14W / 170W |      8MiB / 12288MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A    238412      G   /usr/lib/xorg/Xorg                            4MiB |
++---------------------------------------------------------------------------------------+
+/var/spool/slurmd/job36844/slurm_script: line 20: ./testcuda/bin/cudatest: No such file or directory
