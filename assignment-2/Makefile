@@ -11,7 +11,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(BIN_DIR)/%.o)
 
 # Executable files
-TARGET = $(BIN_DIR)/assignment-1
+TARGET = $(BIN_DIR)/assignment-2
 
 # Default target
 all: release
@@ -33,7 +33,7 @@ release: CXXFLAGS = $(RELEASE_FLAGS)
 release: $(TARGET)
 
 # Rule to build the executable
-$(BIN_DIR)/assignment-1: $(OBJS) | $(BIN_DIR)
+$(BIN_DIR)/assignment-2: $(OBJS) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Rule to compile source files to object files
