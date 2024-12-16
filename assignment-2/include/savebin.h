@@ -6,7 +6,8 @@
 #include <fstream>
 #include <stdexcept>
 #include <cassert>
-#include <cuda_runtime.h>
+#include "/usr/local/cuda/include/cuda_runtime.h"
+
 
 // Save a 3D volume to a binary file using CUDA
 void savevolume(const float* d_volume, const std::string& filename, int depth, int rows, int cols) {

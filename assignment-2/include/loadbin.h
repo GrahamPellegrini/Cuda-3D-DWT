@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cassert>
-#include <cuda_runtime.h>
+#include "/usr/local/cuda/include/cuda_runtime.h"
 
 // CUDA kernel to read data from the binary file
 __global__ void readVolumeKernel(float* d_volume, float* d_data, int depth, int rows, int cols) {
