@@ -4,42 +4,36 @@
 #include <vector>
 #include <string>
 #include <fstream>
-#include <iostream>
+#include <stdexcept>
 #include <cassert>
-#include "/usr/local/cuda/include/cuda_runtime.h"
 
-// CUDA error checking utility
-#include "cuda_utils.h"
-
-// Save a 3D volume to a binary file using CUDA
-void savevolume(const float* d_volume, const std::string& filename, int depth, int rows, int cols) {
+// Save a 3D volume to a binary file
+void savevolume(const std::vector<std::vector<std::vector<float>>>& volume, const std::string& filename) {
     // Open the file
     std::ofstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        exit(EXIT_FAILURE);
-    }
+
+    // Check if the file is open
+    assert(file.is_open() && "Error opening file");
+
+    // Get the dimensions of the volume
+    int depth = volume.size();
+    int rows = volume[0].size();
+    int cols = volume[0][0].size();
 
     // Write the dimensions to the binary file
     file.write(reinterpret_cast<const char*>(&depth), sizeof(depth));
     file.write(reinterpret_cast<const char*>(&rows), sizeof(rows));
     file.write(reinterpret_cast<const char*>(&cols), sizeof(cols));
 
-    // Calculate size of the data in bytes
-    size_t size = depth * rows * cols * sizeof(float);
+    // Itteratively write the volume to the binary file
+    for (const auto& slice : volume) {
+        for (const auto& row : slice) {
+            file.write(reinterpret_cast<const char*>(row.data()), cols * sizeof(float));
+        }
+    }
 
-    // Allocate host memory for the data
-    std::vector<float> h_data(depth * rows * cols);
-
-    // Copy data from device to host
-    cudaError_t err = cudaMemcpy(h_data.data(), d_volume, size, cudaMemcpyDeviceToHost);
-    cudaCheckError(err); // Use the utility function to check for errors
-
-    // Write the data to the binary file
-    file.write(reinterpret_cast<const char*>(h_data.data()), size);
-
-    // Verify the correct writing to the file
-    assert(file.tellp() == static_cast<std::streamoff>(sizeof(depth) + sizeof(rows) + sizeof(cols) + size) && "Error writing to file");
+    // Show the file dimensions written and check if the file is written correctly
+    assert(file.tellp() == static_cast<std::streamoff>(sizeof(depth) + sizeof(rows) + sizeof(cols) + depth * rows * cols * sizeof(float)) && "Error writing to file");
 
     file.close();
 }

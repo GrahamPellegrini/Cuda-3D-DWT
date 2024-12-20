@@ -9,8 +9,8 @@
 ##SBATCH --reservation=cce3015
 
 # job parameters
-#SBATCH --output=/opt/users/gpel0001/cce3015/ssh/out/make.out
-#SBATCH --error=/opt/users/gpel0001/cce3015/ssh/err/make.err
+#SBATCH --output=/opt/users/gpel0001/cce3015/ssh/out/make_clean.out
+#SBATCH --error=/opt/users/gpel0001/cce3015/ssh/err/make_clean.err
 #SBATCH --job-name=make 
 #SBATCH --account=undergrad
 
@@ -18,8 +18,9 @@
 #SBATCH --mail-user=graham.pellegrini.22@um.edu.mt
 #SBATCH --mail-type=all
 
-
+nvcc --version
 # Directory of the makefile
 cd /opt/users/gpel0001/cce3015/assignment-2
 
-make
+# Clean the project and check for failure
+make clean || { echo "Make failed! Exiting." >&2; exit 1; }
