@@ -1,0 +1,3 @@
+Assignment 2: CUDA Implementation of 3D DWT
+Coefficients and filter length for db1 successfully copied to GPU
+Total time taken: 0.382033 seconds

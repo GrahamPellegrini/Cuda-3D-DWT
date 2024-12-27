@@ -1,1 +1,0 @@
-/var/spool/slurmd/job37832/slurm_script: line 23: 683865 Segmentation fault      (core dumped) assignment-2/bin/assignment-2 assignment-2/file/input.bin assignment-2/file/three_db2.bin 2 3
