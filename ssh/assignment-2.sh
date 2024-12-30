@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=100M
 #SBATCH --time=0-01:05:00
-##SBATCH --reservation=cce3015
+#SBATCH --reservation=cce3015
 
 # job parameters
 #SBATCH --output=/opt/users/gpel0001/cce3015/ssh/out/assignment-2.out
