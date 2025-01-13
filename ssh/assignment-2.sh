@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=100M
 #SBATCH --time=0-01:05:00
-#SBATCH --reservation=cce3015
+##SBATCH --reservation=cce3015
 
 # job parameters
 #SBATCH --output=/opt/users/gpel0001/cce3015/ssh/out/assignment-2.out
@@ -19,5 +19,19 @@
 #SBATCH --mail-user=graham.pellegrini.22@um.edu.mt
 #SBATCH --mail-type=all
 
-# Run your C++ binary with the desired arguments for assignment 1
-assignment-2/bin/assignment-2 assignment-2/file/file_in.bin assignment-2/file/single_haar.bin 1 1
+# Directory of the assignment 1
+cd /opt/users/gpel0001/cce3015/assignment-2
+
+# Clean old binaries and check for failure
+make clean
+
+# Make the project
+make
+
+# Give the makefile time to finish making binaries
+sleep 5
+# Run The Multi-level 3D DWT using cuda
+./bin/assignment-2 file/input.bin file/single_haar.bin 1 1 0
+sleep 5
+# Run the inverse transform on the produced out file
+./bin/assignment-2 file/single_haar.bin file/inv_single_haar.bin 1 1 1

@@ -32,7 +32,7 @@ debug: $(TARGET)
 release: CXXFLAGS = $(RELEASE_FLAGS)
 release: $(TARGET)
 
-# Rule to build the executable
+# Rule to build the executable for assignment-1
 $(BIN_DIR)/assignment-1: $(OBJS) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^ -I$(INC_DIR)
 

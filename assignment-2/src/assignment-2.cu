@@ -11,10 +11,12 @@
 // CUDA headers
 #include <cuda_runtime.h>
 #include "../include/cudaerr.h"
+#include "../include/kernels.cu"
 
 // Custom headers
 #include "../include/loadbin.h"
 #include "../include/savebin.h"
+#include "../include/inverse.h"
 
 
 // Define the wavelet coefficients as floats
@@ -33,74 +35,67 @@ const std::vector<std::vector<float>> db_high = {
     {-0.23037781f, 0.71484657f, -0.63088077f, -0.02798377f, 0.18703481f, 0.03084138f, -0.03288301f, -0.01059740f} // db4
 };
 
-__constant__ float d_low_coeff[8];   // Maximum size for low-pass filters
-__constant__ float d_high_coeff[8]; // Maximum size for high-pass filters
-__constant__ int d_filter_length;
-
-void coeffGPU(int db_num) {
-    // Ensure db_num is between 1 and 4
-    assert(db_num >= 1 && db_num <= 4 && "db_num must be between 1 and 4");
+void toGPU(std::vector<std::vector<std::vector<float>>> volume, int db_num, int depth, int rows, int cols, float*& d_low_coeff, float*& d_high_coeff, int&filter_size, float*& d_volume) {
 
     // Select the coefficients based on db_num
     std::vector<float> low_coeff = db_low[db_num - 1];
     std::vector<float> high_coeff = db_high[db_num - 1];
 
-    // Fill the rest of the array with 0.0f if the filter is shorter than 8 coefficients
-    std::vector<float> low_coeff_filled(8, 0.0f);
-    std::vector<float> high_coeff_filled(8, 0.0f);
+    // Calculate the filter size
+    filter_size = low_coeff.size();
 
-    // Copy the selected coefficients into the first part of the arrays
-    std::copy(low_coeff.begin(), low_coeff.end(), low_coeff_filled.begin());
-    std::copy(high_coeff.begin(), high_coeff.end(), high_coeff_filled.begin());
-
-    // Copy the filled arrays to GPU's constant memory
-    cudaError_t err = cudaMemcpyToSymbol(d_low_coeff, low_coeff_filled.data(), 8 * sizeof(float));
+    // Allocate memory for the low and high pass coefficients on the GPU
+    cudaError_t err = cudaMalloc(&d_low_coeff, low_coeff.size() * sizeof(float));
     if (err != cudaSuccess) {
-        std::cerr << "Error copying low coefficients to GPU: " << cudaGetErrorString(err) << std::endl;
-        return;
+        throw std::runtime_error("Failed to allocate GPU memory for low coefficients: " + std::string(cudaGetErrorString(err)));
     }
 
-    err = cudaMemcpyToSymbol(d_high_coeff, high_coeff_filled.data(), 8 * sizeof(float));
+    err = cudaMalloc(&d_high_coeff, high_coeff.size() * sizeof(float));
     if (err != cudaSuccess) {
-        std::cerr << "Error copying high coefficients to GPU: " << cudaGetErrorString(err) << std::endl;
-        return;
+        cudaFree(d_low_coeff); // Free previously allocated memory
+        throw std::runtime_error("Failed to allocate GPU memory for high coefficients: " + std::string(cudaGetErrorString(err)));
     }
 
-    // Copy the filter length for the selected wavelet to GPU's constant memory
-    int filter_length = low_coeff.size();
-    err = cudaMemcpyToSymbol(d_filter_length, &filter_length, sizeof(int));
+    // Copy the coefficients to the GPU
+    err = cudaMemcpy(d_low_coeff, low_coeff.data(), low_coeff.size() * sizeof(float), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
-        std::cerr << "Error copying filter length to GPU: " << cudaGetErrorString(err) << std::endl;
-        return;
+        cudaFree(d_low_coeff);
+        cudaFree(d_high_coeff);
+        throw std::runtime_error("Failed to copy low coefficients to GPU: " + std::string(cudaGetErrorString(err)));
     }
 
-    std::cerr << "Coefficients and filter length for db" << db_num << " successfully copied to GPU" << std::endl;
-}
+    err = cudaMemcpy(d_high_coeff, high_coeff.data(), high_coeff.size() * sizeof(float), cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) {
+        cudaFree(d_low_coeff);
+        cudaFree(d_high_coeff);
+        throw std::runtime_error("Failed to copy high coefficients to GPU: " + std::string(cudaGetErrorString(err)));
+    }
 
-float* volGPU(std::vector<std::vector<std::vector<float>>>& volume, int depth, int rows, int cols) {
     // Flatten the 3D volume into a 1D vector (row-major order)
     std::vector<float> flat_volume(depth * rows * cols);
     for (int d = 0; d < depth; ++d) {
         for (int r = 0; r < rows; ++r) {
             for (int c = 0; c < cols; ++c) {
-                flat_volume[(d * rows * cols) + (r * cols) + c] = volume[d][r][c];
+                flat_volume[d * rows * cols + r * cols + c] = volume[d][r][c];
             }
         }
     }
 
-    // Allocate memory on the GPU
-    float* d_volume = nullptr;
-    cudaError_t err = cudaMalloc(&d_volume, flat_volume.size() * sizeof(float));
+    // Allocate memory on the GPU for the volume
+    err = cudaMalloc(&d_volume, flat_volume.size() * sizeof(float));
     if (err != cudaSuccess) {
+        cudaFree(d_low_coeff);
+        cudaFree(d_high_coeff);
         throw std::runtime_error("Failed to allocate GPU memory for volume: " + std::string(cudaGetErrorString(err)));
     }
 
-    // Copy data to the GPU
+    // Copy the flattened volume to the GPU
     err = cudaMemcpy(d_volume, flat_volume.data(), flat_volume.size() * sizeof(float), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
-        // Free the allocated memory in case of an error
+        cudaFree(d_low_coeff);
+        cudaFree(d_high_coeff);
         cudaFree(d_volume);
-        throw std::runtime_error("Failed to copy data to GPU: " + std::string(cudaGetErrorString(err)));
+        throw std::runtime_error("Failed to copy volume data to GPU: " + std::string(cudaGetErrorString(err)));
     }
 
     // Clear the CPU memory after copying to GPU
@@ -112,8 +107,6 @@ float* volGPU(std::vector<std::vector<std::vector<float>>>& volume, int depth, i
     if (err != cudaSuccess) {
         throw std::runtime_error("Failed to synchronize the device: " + std::string(cudaGetErrorString(err)));
     }
-
-    return d_volume;
 }
 
 std::vector<std::vector<std::vector<float>>> volCPU(float* d_volume, int depth, int rows, int cols) {
@@ -145,148 +138,93 @@ std::vector<std::vector<std::vector<float>>> volCPU(float* d_volume, int depth, 
     return volume;
 }
 
-__global__ void reduce(float* volume, float* temp, int depth, int rows, int cols, int new_depth, int new_rows, int new_cols) {
-    int z = blockIdx.z * blockDim.z + threadIdx.z;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void reduce(float* volume, float* temp, int depth, int rows, int cols) {
+    int d = blockIdx.z * blockDim.z + threadIdx.z;
+    int r = blockIdx.y * blockDim.y + threadIdx.y;
+    int c = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (z < new_depth && y < new_rows && x < new_cols) {
+    if (d < depth / 2 && r < rows / 2 && c < cols / 2) {
         // Calculate indices for LLL subband
-        int old_idx = (z * 2) * rows * cols + (y * 2) * cols + (x * 2);
-        int new_idx = z * new_rows * new_cols + y * new_cols + x;
+        int old_idx = d * (rows / 2) * (cols / 2) + r * (cols / 2) + c;
+        int new_idx = d * rows * cols + r * cols + c;
 
         // Extract LLL subband
         temp[new_idx] = volume[old_idx];
     }
 }
-__global__ void dwt_1d_inplace(float* data, int signal_size, int stride) {
-    extern __shared__ float shared_mem[];
 
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+__global__ void copy_transformed_data(float* d_transformed, float* d_final, size_t depth, size_t rows, size_t cols, size_t orig_depth, size_t orig_rows, size_t orig_cols) {
+    int d = blockIdx.z * blockDim.z + threadIdx.z;
+    int r = blockIdx.y * blockDim.y + threadIdx.y;
+    int c = blockIdx.x * blockDim.x + threadIdx.x;
 
-    // Load data into shared memory
-    if (idx < signal_size) {
-        shared_mem[threadIdx.x] = data[idx * stride];
-    }
-    __syncthreads();
-
-    if (idx < signal_size / 2) {
-        // Temporary storage for transformed data
-        float low_sum = 0.0f, high_sum = 0.0f;
-
-        // Access filter length from constant memory
-        int filter_length = d_filter_length;
-
-        for (int j = 0; j < filter_length; ++j) {
-            int pos = threadIdx.x * 2 + j;
-            low_sum += shared_mem[pos] * d_low_coeff[j];
-            high_sum += shared_mem[pos] * d_high_coeff[j];
-        }
-
-        // Write results back into shared memory
-        shared_mem[threadIdx.x] = low_sum;
-        shared_mem[threadIdx.x + signal_size / 2] = high_sum;
-    }
-    __syncthreads();
-
-    // Write back to global memory
-    if (idx < signal_size) {
-        data[idx * stride] = shared_mem[threadIdx.x];
+    if (d < depth && r < rows && c < cols) {
+        d_final[d * orig_rows * orig_cols + r * orig_cols + c] = d_transformed[d * rows * cols + r * cols + c];
     }
 }
 
-void dwt_3d(float* d_volume, int rows, int cols, int depth) {
-    size_t shared_mem_size = (std::max({rows, cols, depth}) + 8) * sizeof(float);
 
-
-    // Handle rows
-    for (int d = 0; d < depth; ++d) {
-        dim3 row_blocks((cols + 255) / 256);
-        for (int r = 0; r < rows; ++r) {
-            float* row_ptr = d_volume + d * rows * cols + r * cols;
-            dwt_1d_inplace<<<row_blocks, 256, shared_mem_size>>>(row_ptr, cols, 1);
-        }
+void dwt_3d(float* d_volume, float* d_low_coeff, float* d_high_coeff, int depth, int rows, int cols, int filter_size) {
+    float* d_data1 = d_volume;
+    float* d_data2 = nullptr;
+    cudaError_t err = cudaMalloc(&d_data2, depth * rows * cols * sizeof(float));
+    if (err != cudaSuccess) {
+        std::cerr << "Failed to allocate GPU memory for temporary volume: " << cudaGetErrorString(err) << std::endl;
     }
+
+    dim3 blockDim(16, 8, 8);
+    dim3 gridDim0((rows + blockDim.x - 1) / blockDim.x, (cols + blockDim.y - 1) / blockDim.y, (depth + blockDim.z - 1) / blockDim.z);
+    dim3 gridDim1((cols + blockDim.x - 1) / blockDim.x, (rows + blockDim.y - 1) / blockDim.y, (depth + blockDim.z - 1) / blockDim.z);
+    dim3 gridDim2((depth + blockDim.x - 1) / blockDim.x, (cols + blockDim.y - 1) / blockDim.y, (rows + blockDim.z - 1) / blockDim.z);
+
+
+    // Perform convolution along the first dimension
+    dim0_kernel<<<gridDim0, blockDim, filter_size * sizeof(float) * 2>>>(d_data1, d_data2, d_low_coeff, d_high_coeff, filter_size, depth, rows, cols);
+    // Synchronize the device
     cudaDeviceSynchronize();
 
-    // Handle columns
-    for (int d = 0; d < depth; ++d) {
-        dim3 col_blocks((rows + 255) / 256);
-        for (int c = 0; c < cols; ++c) {
-            float* col_ptr = d_volume + d * rows * cols + c;
-            dwt_1d_inplace<<<col_blocks, 256, shared_mem_size>>>(col_ptr, rows, cols);
-        }
-    }
+
+    // Perform convolution along the second dimension
+    dim1_kernel<<<gridDim1, blockDim, filter_size * sizeof(float) * 2>>>(d_data2, d_data1, d_low_coeff, d_high_coeff, filter_size, depth, rows, cols);
+    // Synchronize the device  
     cudaDeviceSynchronize();
 
-    // Handle depth
-    for (int r = 0; r < rows; ++r) {
-        for (int c = 0; c < cols; ++c) {
-            dim3 depth_blocks((depth + 255) / 256);
-            float* depth_ptr = d_volume + r * cols + c;
-            dwt_1d_inplace<<<depth_blocks, 256, shared_mem_size>>>(depth_ptr, depth, rows * cols);
-        }
-    }
+    // Perform convolution along the third dimension
+    dim2_kernel<<<gridDim2, blockDim, filter_size * sizeof(float) * 2>>>(d_data1, d_data2, d_low_coeff, d_high_coeff, filter_size, depth, rows, cols);
+    // Synchronize the device
     cudaDeviceSynchronize();
+
+
+
+    // Copy the transformed data back to the original volume
+    dim3 gridDim((cols + blockDim.x - 1) / blockDim.x, (rows + blockDim.y - 1) / blockDim.y, (depth + blockDim.z - 1) / blockDim.z);
+    copy_transformed_data<<<gridDim, blockDim>>>(d_data2, d_volume, depth, rows, cols, depth, rows, cols);
+    // Synchronize the device
+    cudaDeviceSynchronize();
+
+    // Free the temporary volume
+    err = cudaFree(d_data2);
+    if (err != cudaSuccess) {
+        std::cerr << "Failed to free GPU memory for temporary volume: " << cudaGetErrorString(err) << std::endl;
+    }
 }
 
 
-void multi_level(float* d_volume, int levels, int& depth, int& rows, int& cols) {
+void multi_level(float* d_volume, float* d_low_coeff, float* d_high_coeff, int levels, int& depth, int& rows, int& cols, int filter_size) {
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
     cudaEventRecord(start);
-
+    
     for (int i = 0; i < levels; i++) {
-        // Perform a single-level 3D DWT
-        dwt_3d(d_volume, depth, rows, cols);
-
-        // If last level skip the downsampling
-        if(i == levels - 1) { break; }
-
-        // Calculate the new dimensions after downsampling
-        int new_depth = (depth + 1) / 2;
-        int new_rows = (rows + 1) / 2;
-        int new_cols = (cols + 1) / 2;
-
-        // Allocate memory for the temporary volume
-        float* d_temp = nullptr;
-        cudaError_t err = cudaMalloc(&d_temp, new_depth * new_rows * new_cols * sizeof(float));
-        if (err != cudaSuccess) {
-            std::cerr << "Failed to allocate GPU memory for temporary volume: " << cudaGetErrorString(err) << std::endl;
-            return;
-        }
-
-        // Define the block and grid dimensions for the reduction kernel
-        dim3 block_dim(8, 8, 8);
-        dim3 grid_dim(
-            (new_cols + block_dim.x - 1) / block_dim.x,
-            (new_rows + block_dim.y - 1) / block_dim.y,
-            (new_depth + block_dim.z - 1) / block_dim.z
-        );
-
-        // Perform the reduction
-        reduce<<<grid_dim, block_dim>>>(d_volume, d_temp, depth, rows, cols, new_depth, new_rows, new_cols);
-
-        // Free the old volume
-        cudaFree(d_volume);
-
-        // Update the dimensions
-        depth = new_depth;
-        rows = new_rows;
-        cols = new_cols;
-
-        // Update the volume pointer
-        d_volume = d_temp;
-
-        // Synchronize the device with error checking
-        err = cudaDeviceSynchronize();
-        if (err != cudaSuccess) {
-            std::cerr << "Failed to synchronize the device: " << cudaGetErrorString(err) << std::endl;
-            return;
-        }
+        dwt_3d(d_volume, d_low_coeff, d_high_coeff, depth, rows, cols, filter_size);
+        
+        if (i == levels - 1) {break;}
+        
     }
+    
+
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 
@@ -305,7 +243,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Assignment 2: CUDA Implementation of 3D DWT" << std::endl;
 
     // Check if the number of arguments is correct
-    assert(argc == 5 && "Usage: ./assignment-1 <input.bin> <output.bin> <db_num> <levels>");
+    assert(argc == 6 && "Usage: ./assignment-2 <input.bin> <output.bin> <db_num> <levels> <inverse>");
 
     // Start the global timer
     auto start = std::chrono::high_resolution_clock::now();
@@ -315,9 +253,7 @@ int main(int argc, char *argv[]) {
     std::string bin_out = argv[2];
     int db_num = std::stoi(argv[3]);
     int levels = std::stoi(argv[4]);
-
-    // Send the wavelet coefficients to the GPU
-    coeffGPU(db_num);
+    int inverse = std::stoi(argv[5]);
 
     // Load the 3D volume from the binary file
     std::vector<std::vector<std::vector<float>>> vol_in = loadvolume(bin_in);
@@ -330,14 +266,42 @@ int main(int argc, char *argv[]) {
     // Print the dimensions of the 3D volume
     std::cerr << "Volume dimensions: " << depth << "x" << rows << "x" << cols << std::endl;
 
-    // Allocate memory on the GPU for the 3D volume
-    float* d_volume = volGPU(vol_in, depth, rows, cols);
+    // Define volume for the output
+    std::vector<std::vector<std::vector<float>>> vol_out;
 
-    // Perform the multi-level DWT on the 3D volume
-    multi_level(d_volume, levels, depth, rows, cols);
-    
-    // Copy the data back to the CPU
-    std::vector<std::vector<std::vector<float>>> vol_out = volCPU(d_volume, depth, rows, cols);
+    // Perform the inverse if inverse flag is set to 1
+    if (inverse == 1) {
+        std::cerr << "Performing inverse DWT" << std::endl;
+
+        inverse_multi_level(vol_in, db_num, levels);
+
+        // Swap vol_in and name it vol_out
+        vol_out = vol_in;
+
+        // print the dimensions of volume after inverse DWT
+        std::cerr << "Volume dimensions after inverse DWT: " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
+
+    }
+    else{
+        
+        // Create pointers for the volume and coefficients on the GPU
+        float* d_low_coeff = nullptr;
+        float* d_high_coeff = nullptr;
+        float* d_volume = nullptr;
+        int filter_size;
+
+        // Copy the volume and coefficients to the GPU
+        toGPU(vol_in, db_num, depth, rows, cols, d_low_coeff, d_high_coeff, filter_size, d_volume);
+        
+        // Perform the multi-level DWT on the 3D volume
+        multi_level(d_volume, d_low_coeff, d_high_coeff, levels, depth, rows, cols, filter_size);
+
+        // Copy the data back to the CPU
+        vol_out = volCPU(d_volume, depth, rows, cols);
+
+        // print the dimensions of volume after DWT
+        std::cerr << "Volume dimensions after DWT: " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
+    }
 
     // Save the modified 3D volume to the output binary file
     savevolume(vol_out, bin_out);
@@ -349,6 +313,15 @@ int main(int argc, char *argv[]) {
 
     // Log the time taken for the program
     std::cerr << "Total time taken: " << t.count() << " seconds" << std::endl;
+
+    /*
+    Fix the inverse transform so that the first slices match
+
+    Try fix the multi level with regards to the cuda kernel
+
+    Try make the segemented the memory allocations and the kernel calls to be more efficient
+    
+    */
 
     return EXIT_SUCCESS;
 }
