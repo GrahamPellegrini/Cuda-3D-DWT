@@ -26,7 +26,7 @@ cd /opt/users/gpel0001/cce3015/assignment-2
 make clean
 
 # Make the project
-make
+make debug
 
 # Give the makefile time to finish making binaries
 sleep 5

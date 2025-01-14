@@ -1,0 +1,12 @@
+Note the use of size_t instead of int for efficient memory allocation and indexing which is more prominent in the GPU porting.
+
+We didnt make use of Concurrent Execution or streams since in the case of the 3D DWT the dependancy that lies on the volume to be all loaded at once and the sequence of the kernels makes using streams obsolotete. 
+
+The entire 3D volume must reside in memory for the operation. During each pass, you access and transform a significant part (or all) of the volume.
+The 3D DWT involves three sequential passes: one for rows, one for columns, and one for depth. Each pass depends on the output of the previous pass.You cannot start the column operation until the row operation is fully complete.
+
+
+
+To do:
+
+Use code Profiling on PCS at Uni cuda-gdb and NVIDIA Visual Profiler (for CUDA applications)

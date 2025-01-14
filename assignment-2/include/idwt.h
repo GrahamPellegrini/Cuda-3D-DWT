@@ -1,6 +1,6 @@
-// inverse.h
-#ifndef INVERSE_H
-#define INVERSE_H
+// idwt.h
+#ifndef IDWT_H
+#define IDWT_H
 
 #include <iostream>
 #include <vector>
@@ -140,4 +140,4 @@ void inverse_multi_level (std::vector<std::vector<std::vector<float>>>& volume, 
     assert(dwt_d.count() >= 0 && "Time taken should be non-negative.");
 }
 
-#endif // INVERSE_H
+#endif // IDWT_H
