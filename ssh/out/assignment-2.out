@@ -1,2 +1,4 @@
 rm -rf bin
-g++ -Wall -Wextra -std=c++17 -g -DDEBUG -I/usr/local/cuda/include -Iinclude -c src/main.cpp -o bin/main.o
+mkdir -p bin
+nvcc -arch=sm_70 -std=c++17 -Iinclude -c src/assignment-2.cu -o bin/assignment-2.o
+nvcc -arch=sm_70 -std=c++17 -Iinclude bin/assignment-2.o -o bin/assignment-2

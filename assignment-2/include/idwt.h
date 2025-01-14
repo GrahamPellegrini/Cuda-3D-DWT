@@ -1,13 +1,16 @@
-// idwt.h
+// inverse.h
 #ifndef IDWT_H
 #define IDWT_H
 
+// Include the necessary libraries
 #include <iostream>
 #include <vector>
 #include <stdexcept>
 #include <cmath>
 #include <cassert>
 #include <chrono>
+
+// Include the necessary header files
 #include "../include/loadbin.h"
 #include "../include/savebin.h"
 
@@ -101,8 +104,6 @@ void inverse_multi_level (std::vector<std::vector<std::vector<float>>>& volume, 
     int cols = volume[0][0].size();
 
     for (int i = levels - 1; i >= 0; --i) {
-        // print the level going to be performed
-        std::cerr << "Performing level " << i << " DWT" << std::endl;
         if (i != levels - 1) {
             depth *= 2;
             rows *= 2;
@@ -134,7 +135,7 @@ void inverse_multi_level (std::vector<std::vector<std::vector<float>>>& volume, 
     assert(levels > 0 && "Levels should be greater than 0 after processing.");
 
     // Log the time taken for the DWT
-    std::cerr << "Time taken (DWT): " << dwt_d.count() << " seconds" << std::endl;
+    std::cerr << "Time taken (IDWT): " << dwt_d.count() << " seconds" << std::endl;
 
     // Assert a condition if necessary
     assert(dwt_d.count() >= 0 && "Time taken should be non-negative.");

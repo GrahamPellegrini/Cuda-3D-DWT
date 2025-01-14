@@ -55,6 +55,9 @@ void dwt_1d(std::vector<float>& signal, int db_num) {
 
 // Function to perform 3D DWT on a 3D volume
 void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
+    // Start timer to measure time taken for a single 3D DWT
+    auto dwt_s = std::chrono::high_resolution_clock::now();
+
     // Get the shape of the volume
     int depth = volume.size();
     int rows = volume[0].size();
@@ -95,13 +98,20 @@ void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
         }
     }
 
+    // Stop timer
+    auto dwt_e = std::chrono::high_resolution_clock::now();
+    // Calculate the duration
+    std::chrono::duration<double> dwt_d = dwt_e - dwt_s;
+
+    // Log the time taken for the DWT
+    std::cerr << "Time taken (single 3D DWT): " << dwt_d.count() << " seconds" << std::endl;
     
 }
 
 // Function to perform multi-level 3D DWT on a 3D volume
 void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_num, int levels) {
-    // Start timer to measure time taken for DWT
-    auto dwt_s = std::chrono::high_resolution_clock::now();
+    // Start timer to measure time taken for mutli-level DWT
+    auto multi_s = std::chrono::high_resolution_clock::now();
 
     // Get the shape of the volume
     int depth = volume.size();
@@ -135,17 +145,15 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
 
     
     // Stop timer
-    auto dwt_e= std::chrono::high_resolution_clock::now();
+    auto multi_e = std::chrono::high_resolution_clock::now();
     // Calculate the duration
-    std::chrono::duration<double> dwt_d = dwt_e - dwt_s;
-    // Log a success message
-    //std::cerr << "Multi-level DWT completed successfully with "             << levels << " levels and db_num " << db_num << std::endl;
+    std::chrono::duration<double> multi_d = multi_e - multi_s;
 
     // If there's a condition you want to assert, do that separately
     assert(levels > 0 && "Levels should be greater than 0 after processing.");
 
     // Log the time taken for the DWT
-    std::cerr << "Time taken (DWT): " << dwt_d.count() << " seconds" << std::endl;
+    std::cerr << "Time taken (multi-level DWT): " << multi_d.count() << " seconds" << std::endl;
 
     // Assert a condition if necessary
     assert(dwt_d.count() >= 0 && "Time taken should be non-negative.");

@@ -22,11 +22,14 @@
 # Directory of the assignment 1
 cd /opt/users/gpel0001/cce3015/assignment-2
 
+# Show the Cuda version to be used
+nvcc --version
+
 # Clean old binaries and check for failure
 make clean
 
 # Make the project
-make debug
+make 
 
 # Give the makefile time to finish making binaries
 sleep 5

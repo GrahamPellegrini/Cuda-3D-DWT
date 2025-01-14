@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=2G
 #SBATCH --time=0-00:05:00
-#SBATCH --reservation=cce3015
+##SBATCH --reservation=cce3015
 
 # job parameters
 #SBATCH --output=/opt/users/gpel0001/cce3015/ssh/out/assignment_1.out
@@ -24,10 +24,10 @@ cd /opt/users/gpel0001/cce3015/assignment-1
 # Clean old binaries and check for failure
 make clean
 # Give the makefile time to clean the project
-sleep 10 
+sleep 1
 # Make the project
 make
 # Give the makefile time to finish making binaries
-sleep 10
+sleep 5
 # Run your C++ binary with the desired arguments for assignment 1
-./bin/assignment-1 file/input.bin file/three_db2.bin 2 3
+./bin/assignment-1 file/input.bin file/single_haar.bin 1 1 
