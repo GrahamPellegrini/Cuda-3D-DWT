@@ -1,11 +1,16 @@
 Assignment 2: CUDA Implementation of 3D DWT
-Volume dimensions: 78x512x512
-Volume dimensions after DWT: 78x512x512
-Total time taken: 1.32846 seconds
+Volume dimension in : 78x512x512
+Time taken for DWT: 3.96067ms
+Volume dimensions out (1db DWT): 78x512x512
+Total time taken: 1.80787 seconds
+----------------------------------------
+
 Assignment 2: CUDA Implementation of 3D DWT
-Volume dimensions: 78x512x512
+Volume dimension in : 78x512x512
 Performing inverse DWT
 Performing level 0 DWT
-Time taken (DWT): 0.553216 seconds
-Volume dimensions after inverse DWT: 78x512x512
-Total time taken: 1.69895 seconds
+Time taken (DWT): 0.577418 seconds
+Volume dimensions out (1db IDWT): 78x512x512
+Total time taken: 2.36229 seconds
+----------------------------------------
+
