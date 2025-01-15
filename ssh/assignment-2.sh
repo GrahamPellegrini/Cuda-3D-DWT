@@ -32,9 +32,9 @@ make clean
 make nsys-profile
 
 # Give the makefile time to finish making binaries
-sleep 5
+#sleep 5
 # Run The Multi-level 3D DWT using cuda
-./bin/assignment-2 file/input.bin file/single_haar.bin 1 0
-sleep 5
+#./bin/assignment-2 file/input.bin file/single_haar.bin 1 0
+#sleep 5
 # Run the inverse transform on the produced out file
-./bin/assignment-2 file/single_haar.bin file/inv_single_haar.bin 1 1
+#./bin/assignment-2 file/single_haar.bin file/inv_single_haar.bin 1 1

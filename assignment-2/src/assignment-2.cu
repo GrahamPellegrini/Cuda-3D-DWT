@@ -45,23 +45,28 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
     // Make sure the data is aligned in memory
     assert(reinterpret_cast<uintptr_t>(combined_coeff.data()) % 16 == 0 && "Data is not 16-byte aligned");
 
-    // Make a cuda event to calculate the time taken by the mem copy
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    #if DEBUG
+       
+        // Make a cuda event to calculate the time taken by the mem copy
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
 
-    cudaEventRecord(start);
+        cudaEventRecord(start);
+    #endif
 
     cudaError_t err = cudaMemcpyToSymbol(d_coeff, combined_coeff.data(), filter_size * 2 * sizeof(float));
     assert(err == cudaSuccess && "Failed to copy coefficients to constant memory");
 
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-    // Print the time taken for the mem copy (Not DEBUG)
-    std::cerr << "Time taken for copying coefficients to constant memory: " << milliseconds << "ms" << std::endl;
-    
+    #if DEBUG
+        // Record the stop event and synchronize
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        float milliseconds = 0;
+        cudaEventElapsedTime(&milliseconds, start, stop);
+        // Print the time taken for the mem copy (Not DEBUG)
+        std::cerr << "Time taken for copying coefficients to constant memory: " << milliseconds << "ms" << std::endl;
+    #endif
 
     // Flatten the 3D volume into a 1D vector (row-major order)
     std::vector<float> flat_volume(depth * rows * cols);
@@ -75,15 +80,11 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
 
     // Allocate memory on the GPU for the volume
     err = cudaMalloc(&d_volume, flat_volume.size() * sizeof(float));
-    if (err != cudaSuccess) {
-        throw std::runtime_error("Failed to allocate GPU memory for volume: " + std::string(cudaGetErrorString(err)));
-    }
+    assert(err == cudaSuccess && "Failed to allocate GPU memory for the volume");
 
     // Copy the flattened volume to the GPU
     err = cudaMemcpy(d_volume, flat_volume.data(), flat_volume.size() * sizeof(float), cudaMemcpyHostToDevice);
-    if (err != cudaSuccess) {
-        throw std::runtime_error("Failed to copy flattened volume to GPU: " + std::string(cudaGetErrorString(err)));
-    }
+    assert(err == cudaSuccess && "Failed to copy flattened volume to GPU");
 
     // Clear the CPU memory after copying to GPU
     flat_volume.clear();
