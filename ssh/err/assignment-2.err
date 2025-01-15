@@ -4,4 +4,8 @@ Try the 'nsys status --environment' command to learn more.
 WARNING: CPU context switch tracing not supported, disabling.
 Try the 'nsys status --environment' command to learn more.
 
-Time taken for DWT: 4.5592ms
+Assignment 2: CUDA Implementation of 3D DWT
+Volume dimensions: 78x512x512
+Time taken to copy coefficients to GPU: 0.89168 ms
+Volume dimensions after DWT: 78x512x512
+Total time taken: 1.48575 seconds

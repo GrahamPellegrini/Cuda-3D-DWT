@@ -27,41 +27,46 @@ const std::vector<std::vector<float>> db_high = {
 
 
 // Function to handle the GPU memory allocation and data transfer
-void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, size_t depth, size_t rows, size_t cols, size_t& filter_size, float*& d_volume) 
+void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, size_t depth, size_t rows, size_t cols, float* d_coeff, size_t& filter_size, float*& d_volume) 
 {
+    
     // Select the coefficients based on db_num
     std::vector<float> low_coeff = db_low[db_num - 1];
     std::vector<float> high_coeff = db_high[db_num - 1];
 
     // Calculate the filter size 
     filter_size = low_coeff.size();
-    assert(filter_size < MAX_FILTER_SIZE && "Filter size exceeds constant memory capacity");
-    
-    // Pack coefficients
+
+    // Combine the low and high coefficients into a single array
     std::vector<float> combined_coeff(filter_size * 2);
-    std::copy(low_coeff.begin(), low_coeff.end(), combined_coeff.begin());
-    std::copy(high_coeff.begin(), high_coeff.end(), combined_coeff.begin() + filter_size);
-
-    // Make sure the data is aligned in memory
-    assert(reinterpret_cast<uintptr_t>(combined_coeff.data()) % 16 == 0 && "Data is not 16-byte aligned");
-
-  
+    for (size_t i = 0; i < filter_size; ++i) {
+        combined_coeff[i] = low_coeff[i];
+        combined_coeff[i + filter_size] = high_coeff[i];
+    }
+    
     // Make a cuda event to calculate the time taken by the mem copy
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
+
     cudaEventRecord(start);
 
+    // Allocate memory on the GPU for the coefficients
+    cudaError_t err = cudaMalloc(&d_coeff, filter_size * sizeof(float) * 2);
+    assert(err == cudaSuccess && "Failed to allocate GPU memory for coefficients");
 
-    cudaError_t err = cudaMemcpyToSymbol(d_coeff, combined_coeff.data(), filter_size * 2 * sizeof(float));
-    assert(err == cudaSuccess && "Failed to copy coefficients to constant memory");
+    // Copy the coefficients to the GPU
+    err = cudaMemcpy(d_coeff, combined_coeff.data(), filter_size * sizeof(float) * 2, cudaMemcpyHostToDevice);
+    assert(err == cudaSuccess && "Failed to copy coefficients to GPU");
 
-    // Stop and print the time taken for the mem copy (Not DEBUG)
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
-    auto time_taken = 0.0f;
-    cudaEventElapsedTime(&time_taken, start, stop);
-    std::cerr << "Time taken for mem copy: " << time_taken << "ms" << std::endl;
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    // Print the time taken for the mem copy (Not DEBUG)
+    std::cerr << "Time taken for copying coefficients to global memory GPU: " <<
+    milliseconds << "ms" << std::endl;
+    
 
     // Flatten the 3D volume into a 1D vector (row-major order)
     std::vector<float> flat_volume(depth * rows * cols);
@@ -75,11 +80,15 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
 
     // Allocate memory on the GPU for the volume
     err = cudaMalloc(&d_volume, flat_volume.size() * sizeof(float));
-    assert(err == cudaSuccess && "Failed to allocate GPU memory for the volume");
+    if (err != cudaSuccess) {
+        throw std::runtime_error("Failed to allocate GPU memory for volume: " + std::string(cudaGetErrorString(err)));
+    }
 
     // Copy the flattened volume to the GPU
     err = cudaMemcpy(d_volume, flat_volume.data(), flat_volume.size() * sizeof(float), cudaMemcpyHostToDevice);
-    assert(err == cudaSuccess && "Failed to copy flattened volume to GPU");
+    if (err != cudaSuccess) {
+        throw std::runtime_error("Failed to copy flattened volume to GPU: " + std::string(cudaGetErrorString(err)));
+    }
 
     // Clear the CPU memory after copying to GPU
     flat_volume.clear();
@@ -115,7 +124,7 @@ std::vector<std::vector<std::vector<float>>> volCPU(float* d_volume, size_t dept
 }
 
 // Function to perform the 3D DWT on the GPU using the CUDA kernels
-void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filter_size) 
+void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, float* d_coeff, size_t filter_size) 
 {
     // Cuda event used to measure the time taken for the DWT
     cudaEvent_t start, stop;
@@ -140,17 +149,17 @@ void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filt
     dim3 map_grid((cols + blockDim.x - 1) / blockDim.x, (rows + blockDim.y - 1) / blockDim.y, (depth + blockDim.z - 1) / blockDim.z);
 
     // Perform convolution along the rows
-    row_kernel<<<row_grid, blockDim, filter_size * sizeof(float) * 2>>>(d_data1, d_data2, filter_size, depth, rows, cols);
+    row_kernel<<<row_grid, blockDim, filter_size * sizeof(float) * 2>>>(d_data1, d_data2, d_coeff, filter_size, depth, rows, cols);
     err = cudaDeviceSynchronize();
     assert(err == cudaSuccess && "Failed to synchronize the GPU threads at row kernel");
 
     // Perform convolution along the columns
-    col_kernel<<<col_grid, blockDim, filter_size * sizeof(float) * 2>>>(d_data2, d_data1, filter_size, depth, rows, cols);
+    col_kernel<<<col_grid, blockDim, filter_size * sizeof(float) * 2>>>(d_data2, d_data1, d_coeff, filter_size, depth, rows, cols);
     err = cudaDeviceSynchronize();
     assert(err == cudaSuccess && "Failed to synchronize the GPU threads at column kernel");
 
     // Perform convolution along the depth
-    depth_kernel<<<depth_grid, blockDim, filter_size * sizeof(float) * 2>>>(d_data1, d_data2, filter_size, depth, rows, cols);
+    depth_kernel<<<depth_grid, blockDim, filter_size * sizeof(float) * 2>>>(d_data1, d_data2, d_coeff, filter_size, depth, rows, cols);
     err = cudaDeviceSynchronize();
     assert(err == cudaSuccess && "Failed to synchronize the GPU threads at depth kernel");
 
@@ -234,14 +243,16 @@ int main(int argc, char *argv[]) {
         
         // Create pointers for the volume on the GPU 
         float* d_volume = nullptr;
+        // Create pointers for the low and high coefficients on the GPU
+        float* d_coeff = nullptr;
         // Indicator of the filters sizes to be iterated over
         size_t filter_size;
 
         // Copy the db Coeffs to constant memory and Volume to global memory on the GPU
-        toGPU(vol_in, db_num, depth, rows, cols, filter_size, d_volume);
+        toGPU(vol_in, db_num, depth, rows, cols, d_coeff, filter_size, d_volume);
         
         // Perform the Cuda 3D DWT in the GPU
-        dwt_3d(d_volume, depth, rows, cols, filter_size);
+        dwt_3d(d_volume, depth, rows, cols, d_coeff, filter_size);
 
         // Copy the transformed volume back to the CPU
         vol_out = volCPU(d_volume, depth, rows, cols);
