@@ -20,11 +20,19 @@ TARGET = $(BIN_DIR)/assignment-2
 all: release
 
 # Release build
+release: NVCC_FLAGS += $(RELEASE_FLAGS)
 release: $(TARGET)
 
 # Debug build
 debug: NVCC_FLAGS += $(DEBUG_FLAGS)
 debug: clean $(TARGET)
+
+# Profiling build and execution
+profile: release
+	ncu --set full --target-processes all ./$(TARGET)
+
+nsys-profile: release
+	nsys profile -o $(BIN_DIR)/profile ./$(TARGET) file/input.bin file/single_haar.bin 1 0
 
 # Compile and link
 $(TARGET): $(OBJ)

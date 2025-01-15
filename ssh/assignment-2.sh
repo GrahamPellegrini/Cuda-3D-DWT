@@ -29,7 +29,7 @@ nvcc --version
 make clean
 
 # Make the project
-make 
+make nsys-profile
 
 # Give the makefile time to finish making binaries
 sleep 5

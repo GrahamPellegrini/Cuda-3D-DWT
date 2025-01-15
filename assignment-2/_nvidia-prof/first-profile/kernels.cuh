@@ -7,7 +7,8 @@
 // Define the max filter size (currently db4)
 const int MAX_FILTER_SIZE = 8;
 // Contant Memory declaration for coefficients
-__constant__ float d_coeff[2*MAX_FILTER_SIZE];
+__constant__ float lcf[MAX_FILTER_SIZE];
+__constant__ float hcf[MAX_FILTER_SIZE];
 
 __global__ void row_kernel(float* data, float* temp, size_t filter_size, size_t depth_limit, size_t row_limit, size_t col_limit) {
     size_t d = blockIdx.z * blockDim.z + threadIdx.z;
@@ -23,8 +24,8 @@ __global__ void row_kernel(float* data, float* temp, size_t filter_size, size_t 
             size_t data_index = d * row_limit * col_limit + index * col_limit + c;
 
             float input_val = data[data_index];
-            sum_low += d_coeff[j] * input_val;
-            sum_high += d_coeff[j + filter_size] * input_val;
+            sum_low += lcf[j] * input_val;
+            sum_high += hcf[j] * input_val;
         }
 
         size_t low_index = d * row_limit * col_limit + i * col_limit + c;
@@ -49,8 +50,8 @@ __global__ void col_kernel(float* data, float* temp, size_t filter_size, size_t 
             size_t data_index = d * row_limit * col_limit + r * col_limit + index;
 
             float input_val = data[data_index];
-            sum_low += d_coeff[j] * input_val;
-            sum_high += d_coeff[j + filter_size] * input_val;
+            sum_low += lcf[j] * input_val;
+            sum_high += hcf[j] * input_val;
         }
 
         size_t low_index = d * row_limit * col_limit + r * col_limit + i;
@@ -75,8 +76,8 @@ __global__ void depth_kernel(float* data, float* temp, size_t filter_size, size_
             size_t data_index = index * row_limit * col_limit + r * col_limit + c;
 
             float input_val = data[data_index];
-            sum_low += d_coeff[j] * input_val;
-            sum_high += d_coeff[j + filter_size] * input_val;
+            sum_low += lcf[j] * input_val;
+            sum_high += hcf[j] * input_val;
         }
 
         size_t low_index = i * row_limit * col_limit + r * col_limit + c;

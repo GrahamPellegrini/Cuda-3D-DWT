@@ -29,6 +29,9 @@ const std::vector<std::vector<float>> db_high = {
 // Function to handle the GPU memory allocation and data transfer
 void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, size_t depth, size_t rows, size_t cols, size_t& filter_size, float*& d_volume) 
 {
+    // dummy syncronise 
+    cudaDeviceSynchronize();
+    
     // Select the coefficients based on db_num
     std::vector<float> low_coeff = db_low[db_num - 1];
     std::vector<float> high_coeff = db_high[db_num - 1];

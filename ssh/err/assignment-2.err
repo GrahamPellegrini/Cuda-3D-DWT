@@ -1,2 +1,11 @@
-Time taken for DWT: 4.24995ms
-Time taken (IDWT): 2.06237 seconds
+WARNING: CPU IP/backtrace sampling not supported, disabling.
+Try the 'nsys status --environment' command to learn more.
+
+WARNING: CPU context switch tracing not supported, disabling.
+Try the 'nsys status --environment' command to learn more.
+
+Time taken for copying coefficients to constant memory: 120.617ms
+Time taken for DWT: 3.51526ms
+Time taken for copying coefficients to constant memory: 6.52701ms
+Time taken for DWT: 3.27386ms
+Time taken (IDWT): 0.553666 seconds

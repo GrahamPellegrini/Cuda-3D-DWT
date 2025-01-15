@@ -37,31 +37,12 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
     filter_size = low_coeff.size();
     assert(filter_size < MAX_FILTER_SIZE && "Filter size exceeds constant memory capacity");
     
-    // Pack coefficients
-    std::vector<float> combined_coeff(filter_size * 2);
-    std::copy(low_coeff.begin(), low_coeff.end(), combined_coeff.begin());
-    std::copy(high_coeff.begin(), high_coeff.end(), combined_coeff.begin() + filter_size);
+    // Copy coefficients to constant memory
+    cudaError_t err = cudaMemcpyToSymbol(lcf, low_coeff.data(), filter_size * sizeof(float));
+    assert(err == cudaSuccess && "Failed to copy low coefficients to constant memory");
 
-    // Make sure the data is aligned in memory
-    assert(reinterpret_cast<uintptr_t>(combined_coeff.data()) % 16 == 0 && "Data is not 16-byte aligned");
-
-    // Make a cuda event to calculate the time taken by the mem copy
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-
-    cudaEventRecord(start);
-
-    cudaError_t err = cudaMemcpyToSymbol(d_coeff, combined_coeff.data(), filter_size * 2 * sizeof(float));
-    assert(err == cudaSuccess && "Failed to copy coefficients to constant memory");
-
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-    // Print the time taken for the mem copy (Not DEBUG)
-    std::cerr << "Time taken for copying coefficients to constant memory: " << milliseconds << "ms" << std::endl;
-    
+    err = cudaMemcpyToSymbol(hcf, high_coeff.data(), filter_size * sizeof(float));
+    assert(err == cudaSuccess && "Failed to copy high coefficients to constant memory");
 
     // Flatten the 3D volume into a 1D vector (row-major order)
     std::vector<float> flat_volume(depth * rows * cols);
