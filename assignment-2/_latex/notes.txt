@@ -30,3 +30,52 @@ Refercnes:
 
 
 Since we are porting the serial implementation, most of the code structure is kept consistent with the serial implementation. We no longer have need for the levels argument to be passed since we are moving to a single level implementation but instead we need to pass a flag that indicated when we want to perform the inverse transform. So in our code the 'multi-level' function is no longer present and instead main call the 'dwt 3d' function or performes the inverse with the 'idwt.h' header file. The arguments passed now do not include the levels argument but instead include the flag for the inverse transform.\\
+
+
+
+\textbf{Shared Memory:}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/shared-time.png}
+    \caption{Shared Memory Timing from event record}
+    \label{fig:6}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/shared-sum.png}
+    \caption{Shared Memory Timing from profiler}
+    \label{fig:7}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/shared-mem.png}
+    \caption{Shared Summary Timing from profiler}
+    \label{fig:8}
+\end{figure}
+
+
+\textbf{Constant Memory:}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/constant-time.png}
+    \caption{Constant Memory Timing from event record}
+    \label{fig:9}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/const-sum.png}
+    \caption{Constant Memory Timing from profiler}
+    \label{fig:10}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/const-mem.png}
+    \caption{Constant Summary Timing from profiler}
+    \label{fig:11}
+\end{figure}

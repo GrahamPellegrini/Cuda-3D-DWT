@@ -99,6 +99,13 @@ Each implementation was analysed with the NVIDIA profiler, with the main concern
     \label{fig:2}
 \end{figure}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/blaimed-mem-sum.png}
+    \caption{Summary showing abnormally high cudaMemcpyToSymbol time}
+    \label{fig:3}
+\end{figure}
+
 That is since they where the first cuda calls the profiler was blaiming them for the initalization time. So instead additional cudaEvents where added to the code to measure the time taken for the memory transfer. These where then also blaimed for the initalization time. Allowing us to see the actual time taken for the memory transfer.
 
 
@@ -106,13 +113,30 @@ That is since they where the first cuda calls the profiler was blaiming them for
     \centering
     \includegraphics[width=0.5\textwidth]{assets/blaimed-event.png}
     \caption{cudaEvent blaimed for initalization time}
-    \label{fig:3}
+    \label{fig:4}
 \end{figure}
 
-Now fixing this blaiming issue we are able to compare the shared memory method and cosntant memory. From fig.3 we are
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/blaimed-event-sum.png}
+    \caption{Summary showing blaimed time moved to cudaEvent}
+    \label{fig:5}
+\end{figure}
 
-\begin{figure}
-    
+Since the blaiming issue is resolved and we know why our results initially seemed to be obscured by so much we can foucs back on the comparision between shared memory and constant memory. Each case will be analysed with the NVIDIA profiler and confiremd with a cudaEvent record of the time taken for the both the memory transfer and the kernel execution.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/shared-prof.png}
+    \caption{Shared Memory Profiling Results}
+    \label{fig:6}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/const-prof.png}
+    \caption{Constant Memory Profiling Results}
+    \label{fig:7}
 \end{figure}
 
 \section{Conclusion}

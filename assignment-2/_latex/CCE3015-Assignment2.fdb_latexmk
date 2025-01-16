@@ -1,7 +1,7 @@
 # Fdb version 3
-["pdflatex"] 1737044964 "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" "CCE3015-Assignment2.pdf" "CCE3015-Assignment2" 1737044964
+["pdflatex"] 1737062525 "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" "CCE3015-Assignment2.pdf" "CCE3015-Assignment2" 1737062525
   "/etc/texmf/web2c/texmf.cnf" 1699451927 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" 1737044964 13958 64cc68d3376ac9d3e49b9f4a59bd407e ""
+  "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" 1737062524 14920 c281aa494b47d98a45bf6e58be6f3348 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/times/ptmb7t.tfm" 1136768653 2172 fd0c924230362ff848a33632ed45dc23 ""
@@ -84,12 +84,16 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1644012257 39432 7155514e09a3d69036fac785183a21c2 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1736943609 4271278 08815d8b34a5869b952b1c250285f85d ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1736943626 1435889 1b35d29763c5f2c43f0413620076c8dd ""
-  "CCE3015-Assignment2.aux" 1737044964 1336 ac9d437a62e26914a8af3b0379d30523 "pdflatex"
-  "CCE3015-Assignment2.tex" 1737044964 13958 64cc68d3376ac9d3e49b9f4a59bd407e ""
+  "CCE3015-Assignment2.aux" 1737062525 2014 61ea1e3baa4bde8ce3d9b829e81603bd "pdflatex"
+  "CCE3015-Assignment2.tex" 1737062524 14920 c281aa494b47d98a45bf6e58be6f3348 ""
   "IEEEtran.cls" 1737018297 288451 2ca944e3837f3f55e325ddfd2f1a2479 ""
-  "assets/blaimed-event.png" 1737044623 14893 7d74fa155ea336d75c7c6bbeeb321b8e ""
-  "assets/blaimed-mem.png" 1737044623 13325 0392da6728d560fd657782d3591ef1fb ""
+  "assets/blaimed-event-sum.png" 1737060353 14116 bdead43372eab7ca5554765c42431da0 ""
+  "assets/blaimed-event.png" 1737060352 12062 ed23d30972646d5252bb9fe343091ba6 ""
+  "assets/blaimed-mem-sum.png" 1737060352 7694 8acb8db9108327d45b6acf063fa534fd ""
+  "assets/blaimed-mem.png" 1737060353 11887 ea570034262adaf7193c8e74241041ce ""
+  "assets/const-prof.png" 1737062288 115862 33bd2428e6b6ebedbea78c92801faf55 ""
   "assets/grid_block.png" 1737038414 79525 e0cccdd19248a322f00e4e9ffc226ffd ""
+  "assets/shared-prof.png" 1737062475 96969 bf1bbce06498c2f83b6369d9ff0a3c3e ""
   (generated)
   "CCE3015-Assignment2.aux"
   "CCE3015-Assignment2.log"
