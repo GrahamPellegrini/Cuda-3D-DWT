@@ -61,7 +61,7 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
     cudaEventSynchronize(stop);
     auto time_taken = 0.0f;
     cudaEventElapsedTime(&time_taken, start, stop);
-    std::cerr << "Time taken for mem copy: " << time_taken << "ms" << std::endl;
+    std::cerr << "Combined Coeffs -> Const Mem: " << time_taken << "ms" << std::endl;
 
     // Flatten the 3D volume into a 1D vector (row-major order)
     std::vector<float> flat_volume(depth * rows * cols);
@@ -168,7 +168,7 @@ void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filt
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     // Stop and print the time taken for the DWT (Not DEBUG)
-    std::cerr << "Time taken for DWT: " << milliseconds << "ms" << std::endl;
+    std::cerr << "DWT Kernels: " << milliseconds << "ms" << std::endl;
     
     cudaEventDestroy(start);
     cudaEventDestroy(stop);

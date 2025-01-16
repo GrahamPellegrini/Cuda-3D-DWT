@@ -36,13 +36,13 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
     // Calculate the filter size 
     filter_size = low_coeff.size();
     assert(filter_size < MAX_FILTER_SIZE && "Filter size is greater than the maximum filter size");
-    #ifdef DEBUG
-        cudaEvent_t start, stop;
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
 
-        cudaEventRecord(start);
-    #endif
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cudaEventRecord(start);
+
     // Copy coefficients to constant memory
     cudaError_t err = cudaMemcpyToSymbol(lcf, low_coeff.data(), filter_size * sizeof(float));
     assert(err == cudaSuccess && "Failed to copy low coefficients to constant memory");
@@ -50,16 +50,16 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
     err = cudaMemcpyToSymbol(hcf, high_coeff.data(), filter_size * sizeof(float));
     assert(err == cudaSuccess && "Failed to copy high coefficients to constant memory");
 
-    #ifdef DEBUG
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        float milliseconds = 0;
-        cudaEventElapsedTime(&milliseconds, start, stop);
-        std::cerr << "Time taken for copying seperate coefficients to constant memory: " << milliseconds << "ms" << std::endl;
+    
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    std::cerr << "Coefficients -> Constant Mem:  " << milliseconds << "ms" << std::endl;
 
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
-    #endif
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    
 
     
     // Flatten the 3D volume into a 1D vector (row-major order)
@@ -167,7 +167,7 @@ void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filt
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     // Stop and print the time taken for the DWT (Not DEBUG)
-    std::cerr << "Time taken for DWT: " << milliseconds << "ms" << std::endl;
+    std::cerr << "DWT Kernels: " << milliseconds << "ms" << std::endl;
     
     cudaEventDestroy(start);
     cudaEventDestroy(stop);

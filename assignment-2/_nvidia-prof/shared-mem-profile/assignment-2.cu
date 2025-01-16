@@ -68,7 +68,7 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
     cudaEventSynchronize(stop);
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
-    std::cerr << "Time taken to copy coefficients to GPU: " << milliseconds << " ms" << std::endl;
+    std::cerr << "Coefficients -> Global: " << milliseconds << " ms" << std::endl;
 
     // Flatten the 3D volume into a 1D vector (row-major order)
     std::vector<float> flat_volume(depth * rows * cols);
@@ -124,6 +124,12 @@ std::vector<std::vector<std::vector<float>>> volCPU(float* d_volume, size_t dept
 
 
 void dwt_3d(float* d_volume, float* d_low_coeff, float* d_high_coeff, size_t depth, size_t rows, size_t cols, size_t filter_size) {
+
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
+
     float* d_data1 = d_volume;
     float* d_data2 = nullptr;
     cudaError_t err = cudaMalloc(&d_data2, depth * rows * cols * sizeof(float));
@@ -164,6 +170,13 @@ void dwt_3d(float* d_volume, float* d_low_coeff, float* d_high_coeff, size_t dep
     // Free the temporary volume
     err = cudaFree(d_data2);
     assert(err == cudaSuccess && "Failed to free GPU memory for temporary volume");
+
+    // Stop the timer and calculate the time taken to perform the 3D DWT
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    std::cerr << "DWT Kernels: " << milliseconds << " ms" << std::endl;
 }
 
 
@@ -194,8 +207,11 @@ int main(int argc, char *argv[]) {
     size_t rows = vol_in[0].size();
     size_t cols = vol_in[0][0].size();
 
-    // Print the dimensions of the 3D volume
-    std::cerr << "Volume dimensions: " << depth << "x" << rows << "x" << cols << std::endl;
+    #ifdef DEBUG
+        
+        // Print the dimensions of the 3D volume
+        std::cerr << "Volume dimensions: " << depth << "x" << rows << "x" << cols << std::endl;
+    #endif
 
     // Define volume for the output
     std::vector<std::vector<std::vector<float>>> vol_out;
@@ -208,10 +224,10 @@ int main(int argc, char *argv[]) {
 
         // Swap vol_in and name it vol_out
         vol_out = vol_in;
-
-        // print the dimensions of volume after inverse DWT
-        std::cerr << "Volume dimensions after inverse DWT: " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
-
+        #ifdef DEBUG
+            // print the dimensions of volume after inverse DWT
+            std::cerr << "Volume dimensions after inverse DWT: " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
+        #endif
     }
     else{
         
@@ -229,21 +245,24 @@ int main(int argc, char *argv[]) {
 
         // Copy the data back to the CPU
         vol_out = volCPU(d_volume, depth, rows, cols);
-
-        // print the dimensions of volume after DWT
-        std::cerr << "Volume dimensions after DWT: " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
+        #ifdef DEBUG   
+            // print the dimensions of volume after DWT
+            std::cerr << "Volume dimensions after DWT: " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
+        #endif
     }
+    #ifdef DEBUG  
+        // Save the modified 3D volume to the output binary file
+        savevolume(vol_out, bin_out);
 
-    // Save the modified 3D volume to the output binary file
-    savevolume(vol_out, bin_out);
+        // Stop the global timer
+        auto end = std::chrono::high_resolution_clock::now();
+        // Calculate the duration
+        std::chrono::duration<double> t = end - start;
 
-    // Stop the global timer
-    auto end = std::chrono::high_resolution_clock::now();
-    // Calculate the duration
-    std::chrono::duration<double> t = end - start;
+        // Log the time taken for the program
+        std::cerr << "Total time taken: " << t.count() << " seconds" << std::endl;
+    #endif
 
-    // Log the time taken for the program
-    std::cerr << "Total time taken: " << t.count() << " seconds" << std::endl;
 
     /*
     Fix the inverse transform so that the first slices match

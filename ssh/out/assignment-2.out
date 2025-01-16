@@ -8,7 +8,7 @@ mkdir -p bin
 nvcc -arch=sm_70 -std=c++17 -O2 -Iinclude -c src/assignment-2.cu -o bin/assignment-2.o
 nvcc -arch=sm_70 -std=c++17 -O2 -Iinclude bin/assignment-2.o -o bin/assignment-2
 nsys profile -o bin/profile ./bin/assignment-2 file/input.bin file/single_haar.bin 1 0
-Generating '/tmp/nsys-report-70f2.qdstrm'
-[1/1] [0%                          ] profile.nsys-rep[1/1] [0%                          ] profile.nsys-rep[1/1] [==========49%               ] profile.nsys-rep[1/1] [========================97% ] profile.nsys-rep[1/1] [========================98% ] profile.nsys-rep[1/1] [========================99% ] profile.nsys-rep[1/1] [========================100%] profile.nsys-rep[1/1] [5%                          ] profile.nsys-rep[1/1] [==============61%           ] profile.nsys-rep[1/1] [========================99% ] profile.nsys-rep[1/1] [========================100%] profile.nsys-rep[1/1] [========================100%] profile.nsys-rep
+Generating '/tmp/nsys-report-5841.qdstrm'
+[1/1] [0%                          ] profile.nsys-rep[1/1] [0%                          ] profile.nsys-rep[1/1] [===========50%              ] profile.nsys-rep[1/1] [========================98% ] profile.nsys-rep[1/1] [========================99% ] profile.nsys-rep[1/1] [========================100%] profile.nsys-rep[1/1] [5%                          ] profile.nsys-rep[1/1] [==============63%           ] profile.nsys-rep[1/1] [========================99% ] profile.nsys-rep[1/1] [========================100%] profile.nsys-rep[1/1] [========================100%] profile.nsys-rep
 Generated:
     /opt/users/gpel0001/cce3015/assignment-2/bin/profile.nsys-rep
