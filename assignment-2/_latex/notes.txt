@@ -7,9 +7,6 @@ The 3D DWT involves three sequential passes: one for rows, one for columns, and 
 
 Talk about the choice of flattenting the volume and the row-major access
 
-the choice of block Dim of 16 16 4 since we have least depth and higher row and cols, 16*16*4=1024 keeping standard
-
-
 heirachal memory of cuda in our case is the constant coeffs and the global volume
 the explination of hwo the coeffs where initally used as shared memeory but then moved constant since they do not change and it was more efficient show two runs of each and imporved result.
 
@@ -21,3 +18,15 @@ Use code Profiling on PCS at Uni cuda-gdb and NVIDIA Visual Profiler (for CUDA a
 annotate and show the prfiling tools results
 if possible compare with a previouse slower version
 
+
+
+Check for any on the vectors inside a loop created for temportstny storage and instead define with the on the fly vectrors suggested in the previous report.
+Add the not of this check in the 1a.
+
+
+
+Refercnes:
+1. https://siboehm.com/articles/22/CUDA-MMM
+
+
+Since we are porting the serial implementation, most of the code structure is kept consistent with the serial implementation. We no longer have need for the levels argument to be passed since we are moving to a single level implementation but instead we need to pass a flag that indicated when we want to perform the inverse transform. So in our code the 'multi-level' function is no longer present and instead main call the 'dwt 3d' function or performes the inverse with the 'idwt.h' header file. The arguments passed now do not include the levels argument but instead include the flag for the inverse transform.\\
