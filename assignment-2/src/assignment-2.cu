@@ -166,17 +166,17 @@ void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filt
 int main(int argc, char *argv[]) {
     (void)argc; // Suppress unused parameter warning
     // Print the program title (DEBUG)
-    //#ifdef DEBUG
+    #ifdef DEBUG
     std::cerr << "Assignment 2: CUDA Implementation of 3D DWT" << std::endl;
-    //#endif
-
-    // Check if the number of arguments is correct
-    assert(argc == 5 && "Usage: ./assignment-2 <input.bin> <output.bin> <db_num> <inverse>");
-
+    
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     cudaEventRecord(start);
+    #endif
+
+    // Check if the number of arguments is correct
+    assert(argc == 5 && "Usage: ./assignment-2 <input.bin> <output.bin> <db_num> <inverse>");
 
     // Load the arguments into variables
     std::string bin_in = argv[1];
@@ -229,12 +229,14 @@ int main(int argc, char *argv[]) {
         // Indicator of the filters sizes to be iterated over
         size_t filter_size;
 
-        // Cuda event used to measure the time taken for the DWT
-        cudaEvent_t start, stop;
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
+        #ifdef DEBUG
+            // Cuda event used to measure the time taken for the DWT
+            cudaEvent_t start, stop;
+            cudaEventCreate(&start);
+            cudaEventCreate(&stop);
 
-        cudaEventRecord(start);
+            cudaEventRecord(start);
+        #endif
 
         // Copy the db Coeffs to constant memory and Volume to global memory on the GPU
         toGPU(vol_in, db_num, depth, rows, cols, filter_size, d_volume);
@@ -242,38 +244,39 @@ int main(int argc, char *argv[]) {
         // Perform the Cuda 3D DWT in the GPU
         dwt_3d(d_volume, depth, rows, cols, filter_size);
 
-        // Stop and print the time taken for the DWT (DEBUG)
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        float milliseconds = 0;
-        cudaEventElapsedTime(&milliseconds, start, stop);
-        std::cerr << "Time taken (DWT): " << milliseconds << "ms" << std::endl;
+        // Print the dimensions of volume after DWT (DEBUG)
+        #ifdef DEBUG
+            // Stop and print the time taken for the DWT (DEBUG)
+            cudaEventRecord(stop);
+            cudaEventSynchronize(stop);
+            float milliseconds = 0;
+            cudaEventElapsedTime(&milliseconds, start, stop);
+            std::cerr << "Time taken (DWT): " << milliseconds << "ms" << std::endl;
 
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
+            cudaEventDestroy(start);
+            cudaEventDestroy(stop);
+            std::cerr << "Volume dimensions out (" << db_num << "db DWT): " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
+
+            
+        #endif
+
         // Copy the transformed volume back to the CPU
         vol_out = volCPU(d_volume, depth, rows, cols);
 
         // Check if vol_out is empty
         assert(!vol_out.empty() && "Volume out is empty");
-
-        // Print the dimensions of volume after DWT (DEBUG)
-        #ifdef DEBUG
-            std::cerr << "Volume dimensions out (" << db_num << "db DWT): " << vol_out.size() << "x" << vol_out[0].size() << "x" << vol_out[0][0].size() << std::endl;
-        #endif
     }
 
     // Save the modified 3D volume to the output binary file
     savevolume(vol_out, bin_out);
-
-    // Stop and print the time taken for the entire program
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-    std::cerr << "Total time taken: " << milliseconds << "ms" << std::endl;
-    // Print seperator (DEBUG)
     #ifdef DEBUG
+        // Stop and print the time taken for the entire program
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        float milliseconds = 0;
+        cudaEventElapsedTime(&milliseconds, start, stop);
+        std::cerr << "Total time taken: " << milliseconds << "ms" << std::endl;
+        // Print seperator (DEBUG)
         std::cerr << "----------------------------------------" << std::endl;
         std::cerr << std::endl;
     #endif
