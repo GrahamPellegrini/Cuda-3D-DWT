@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.1.15)  16 JAN 2025 22:22
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2025.1.15)  17 JAN 2025 01:19
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -286,34 +286,194 @@ Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
  (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
-)) [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+))
+Underfull \hbox (badness 10000) in paragraph at lines 32--33
+[]\OT1/ptm/m/n/11 The first as-sign-ment fo-cused on the se-rial
+ []
 
 
-]
-LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 48.
- (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
+Underfull \hbox (badness 10000) in paragraph at lines 32--33
+
+ []
+
+
+Underfull \hbox (badness 2521) in paragraph at lines 34--35
+\OT1/ptm/m/n/11 Ad-di-tion-ally, this re-port pro-vides a more de-tailed
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 34--35
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 36--37
+[]\OT1/ptm/m/n/11 Earlier plans pro-posed par-al-leliz-ing all three
+ []
+
+
+Underfull \hbox (badness 4621) in paragraph at lines 36--37
+\OT1/ptm/m/n/11 di-men-sions of the 3D DWT si-mul-ta-ne-ously, but
+ []
+
+
+Underfull \hbox (badness 4353) in paragraph at lines 36--37
+\OT1/ptm/m/n/11 se-quen-tially, with sep-a-rate ker-nels for each, and
+ []
+
+
+Underfull \hbox (badness 3460) in paragraph at lines 36--37
+\OT1/ptm/m/n/11 syn-chro-niza-tion en-sures one di-men-sion's trans-form
+ []
+
+
+Underfull \hbox (badness 3792) in paragraph at lines 36--37
+\OT1/ptm/m/n/11 as-sump-tions, no syn-chro-niza-tion is needed within
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 36--37
+
+ []
+
+
+Underfull \hbox (badness 1460) in paragraph at lines 41--42
+[]\OT1/ptm/m/n/11 The project meets all spec-i-fied re-quire-ments for
+ []
+
+
+Underfull \hbox (badness 3168) in paragraph at lines 41--42
+\OT1/ptm/m/n/11 build con-fig-u-ra-tions and nam-ing con-ven-tions. The
+ []
+
+
+Underfull \hbox (badness 6110) in paragraph at lines 41--42
+\OT1/ptm/m/n/11 Key in-cludes are 'idwt.h' for in-verse trans-form
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 41--42
+
+ []
+
+
+Underfull \hbox (badness 1688) in paragraph at lines 47--48
+\OT1/ptm/m/n/11 per-form-ing par-al-lel op-er-a-tions is the fact that the
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 47--48
+
+ []
+
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 49.
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-<assets/grid_block.png, id=9, 450.9347pt x 190.46156pt>
+<assets/grid_block.png, id=1, 410.2828pt x 189.70876pt>
 File: assets/grid_block.png Graphic file (type png)
 <use assets/grid_block.png>
-Package pdftex.def Info: assets/grid_block.png  used on input line 52.
-(pdftex.def)             Requested size: 258.0pt x 108.97688pt.
+Package pdftex.def Info: assets/grid_block.png  used on input line 53.
+(pdftex.def)             Requested size: 258.0pt x 119.29425pt.
 
-Overfull \hbox (6.0pt too wide) in paragraph at lines 52--53
+Overfull \hbox (6.0pt too wide) in paragraph at lines 53--54
  [][] 
  []
 
-LaTeX Font Info:    Calculating math sizes for size <11> on input line 59.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 59.
-(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+
+
+]
+LaTeX Font Info:    Calculating math sizes for size <11> on input line 60.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 60.
+ (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 59.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 60.
  (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-Underfull \hbox (badness 10000) in paragraph at lines 64--66
+Underfull \hbox (badness 10000) in paragraph at lines 65--67
+
+ []
+
+
+Underfull \hbox (badness 6775) in paragraph at lines 79--80
+\OT1/ptm/m/n/11 ex-am-ine the ker-nel im-ple-men-ta-tion. Each ker-nel
+ []
+
+
+Underfull \hbox (badness 1565) in paragraph at lines 79--80
+\OT1/ptm/m/n/11 to pro-cess based on thread and block in-dexes. It
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 79--80
+\OT1/ptm/m/n/11 trans-for-ma-tions for out-of-bound in-dexes. Once
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 79--80
+
+ []
+
+
+Underfull \hbox (badness 2384) in paragraph at lines 85--86
+[]\OT1/ptm/m/n/11 This sec-tion dis-cusses the op-ti-miza-tion meth-ods
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 85--86
+
+ []
+
+
+Underfull \hbox (badness 2088) in paragraph at lines 87--88
+\OT1/ptm/m/n/11 The co-ef-fi-cients are hard-coded as 2D vec-tors in
+ []
+
+
+Underfull \hbox (badness 4454) in paragraph at lines 87--88
+\OT1/ptm/m/n/11 `as-sign-ment.cu`, with the db num-ber de-ter-min-ing
+ []
+
+
+Underfull \hbox (badness 1701) in paragraph at lines 87--88
+\OT1/ptm/m/n/11 es-sen-tial for con-vo-lu-tion, are trans-ferred to de-vice
+ []
+
+
+Underfull \hbox (badness 3417) in paragraph at lines 87--88
+\OT1/ptm/m/n/11 mem-ory us-ing ei-ther shared mem-ory or con-stant
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 87--88
+
+ []
+
+
+Underfull \hbox (badness 3386) in paragraph at lines 89--90
+\OT1/ptm/m/n/11 cre-ated for the co-ef-fi-cients along-side the vol-ume
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 89--90
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 91--92
+[]\OT1/ptm/m/n/11 For con-stant mem-ory, the co-ef-fi-cients are
+ []
+
+
+Underfull \hbox (badness 4454) in paragraph at lines 91--92
+\OT1/ptm/m/n/11 `cu-d-aMem-cpy-ToSym-bol` copies the co-ef-fi-cients to
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 91--92
 
  []
 
@@ -328,9 +488,6 @@ Overfull \hbox (6.0pt too wide) in paragraph at lines 97--98
  [][] 
  []
 
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
 <assets/blaimed-mem-sum.png, id=20, 328.22626pt x 67.75313pt>
 File: assets/blaimed-mem-sum.png Graphic file (type png)
 <use assets/blaimed-mem-sum.png>
@@ -342,70 +499,127 @@ Overfull \hbox (6.0pt too wide) in paragraph at lines 104--105
  []
 
 
-LaTeX Warning: `h' float specifier changed to `ht'.
+Underfull \hbox (badness 4454) in paragraph at lines 93--108
+[]\OT1/ptm/m/n/11 Both im-ple-men-ta-tions were an-a-lyzed us-ing the
+ []
 
 <assets/blaimed-event.png, id=21, 511.9125pt x 122.70844pt>
 File: assets/blaimed-event.png Graphic file (type png)
 <use assets/blaimed-event.png>
-Package pdftex.def Info: assets/blaimed-event.png  used on input line 114.
+Package pdftex.def Info: assets/blaimed-event.png  used on input line 113.
 (pdftex.def)             Requested size: 258.0pt x 61.84462pt.
 
-Overfull \hbox (6.0pt too wide) in paragraph at lines 114--115
+Overfull \hbox (6.0pt too wide) in paragraph at lines 113--114
  [][] 
  []
 
-<assets/blaimed-event-sum.png, id=22, 325.96782pt x 134.75343pt>
+<assets/blaimed-event-sum.png, id=22, 284.56313pt x 63.98906pt>
 File: assets/blaimed-event-sum.png Graphic file (type png)
 <use assets/blaimed-event-sum.png>
-Package pdftex.def Info: assets/blaimed-event-sum.png  used on input line 121.
-(pdftex.def)             Requested size: 258.0pt x 106.66376pt.
+Package pdftex.def Info: assets/blaimed-event-sum.png  used on input line 120.
+(pdftex.def)             Requested size: 258.0pt x 58.02214pt.
 
-Overfull \hbox (6.0pt too wide) in paragraph at lines 121--122
+Overfull \hbox (6.0pt too wide) in paragraph at lines 120--121
  [][] 
  []
 
 <assets/shared-prof.png, id=23, 344.03531pt x 220.57407pt>
 File: assets/shared-prof.png Graphic file (type png)
 <use assets/shared-prof.png>
-Package pdftex.def Info: assets/shared-prof.png  used on input line 130.
+Package pdftex.def Info: assets/shared-prof.png  used on input line 129.
 (pdftex.def)             Requested size: 258.0pt x 165.4133pt.
 
-Overfull \hbox (6.0pt too wide) in paragraph at lines 130--131
+Overfull \hbox (6.0pt too wide) in paragraph at lines 129--130
  [][] 
  []
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
 
 <assets/const-prof.png, id=24, 354.57469pt x 225.09094pt>
 File: assets/const-prof.png Graphic file (type png)
 <use assets/const-prof.png>
-Package pdftex.def Info: assets/const-prof.png  used on input line 137.
+Package pdftex.def Info: assets/const-prof.png  used on input line 136.
 (pdftex.def)             Requested size: 258.0pt x 163.78607pt.
 
-Overfull \hbox (6.0pt too wide) in paragraph at lines 137--138
+Overfull \hbox (6.0pt too wide) in paragraph at lines 136--137
+ [][] 
+ []
+
+[3 <./assets/blaimed-mem.png> <./assets/blaimed-mem-sum.png> <./assets/blaimed-event.png> <./assets/blaimed-event-sum.png> <./assets/shared-prof.png> <./assets/const-prof.png>]
+Underfull \hbox (badness 1762) in paragraph at lines 152--154
+\OT1/ptm/m/n/11 through columns within rows at each depth, then
+ []
+
+
+Underfull \hbox (badness 2635) in paragraph at lines 152--154
+\OT1/ptm/m/n/11 pro-gress-ing through rows at a depth, and fi-nally
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 152--154
+
+ []
+
+
+Underfull \hbox (badness 1533) in paragraph at lines 158--159
+[]\OT1/ptm/m/n/11 The NVIDIA pro-filer was pre-vi-ously uti-lized to
+ []
+
+
+Underfull \hbox (badness 1742) in paragraph at lines 158--159
+\OT1/ptm/m/n/11 How-ever, fur-ther anal-y-sis of the con-stant mem-ory
+ []
+
+
+Underfull \hbox (badness 3646) in paragraph at lines 158--159
+\OT1/ptm/m/n/11 im-ple-men-ta-tion un-cov-ered a mi-nor but sig-nif-i-cant
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 158--159
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 158--159
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 158--159
+
+ []
+
+<assets/packed-coeffs.png, id=35, 491.58656pt x 233.37187pt>
+File: assets/packed-coeffs.png Graphic file (type png)
+<use assets/packed-coeffs.png>
+Package pdftex.def Info: assets/packed-coeffs.png  used on input line 162.
+(pdftex.def)             Requested size: 258.0pt x 122.48645pt.
+
+Overfull \hbox (6.0pt too wide) in paragraph at lines 162--163
  [][] 
  []
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[3 <./assets/blaimed-mem.png> <./assets/blaimed-mem-sum.png> <./assets/blaimed-event.png> <./assets/blaimed-event-sum.png>] [4
 
- <./assets/shared-prof.png> <./assets/const-prof.png>] (./CCE3015-Assignment2.aux) ) 
+Underfull \hbox (badness 10000) in paragraph at lines 167--168
+
+ []
+
+[4 <./assets/packed-coeffs.png>] (./CCE3015-Assignment2.aux) ) 
 Here is how much of TeX's memory you used:
- 4474 strings out of 480171
- 79032 string characters out of 5894489
- 374935 words of memory out of 5000000
- 22363 multiletter control sequences out of 15000+600000
- 508633 words of font info for 108 fonts, out of 8000000 for 9000
+ 4484 strings out of 480171
+ 79243 string characters out of 5894489
+ 374943 words of memory out of 5000000
+ 22370 multiletter control sequences out of 15000+600000
+ 510818 words of font info for 110 fonts, out of 8000000 for 9000
  63 hyphenation exceptions out of 8191
- 55i,11n,63p,1229b,225s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on CCE3015-Assignment2.pdf (4 pages, 354862 bytes).
+ 55i,11n,63p,1169b,256s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on CCE3015-Assignment2.pdf (4 pages, 398378 bytes).
 PDF statistics:
- 73 PDF objects out of 1000 (max. 8388607)
- 36 compressed objects within 1 object stream
+ 90 PDF objects out of 1000 (max. 8388607)
+ 45 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 36 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 41 words of extra memory for PDF output out of 10000 (max. 10000000)
 
