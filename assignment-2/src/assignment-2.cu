@@ -120,14 +120,6 @@ std::vector<std::vector<std::vector<float>>> volCPU(float* d_volume, size_t dept
 // Function to perform the 3D DWT on the GPU using the CUDA kernels
 void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filter_size) 
 {   
-
-    // Cuda event used to measure the time taken for the DWT
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-
-    cudaEventRecord(start);
-
     // Set and allocate the temporary data pointers
     float* d_data1 = d_volume;
     float* d_data2 = nullptr;
@@ -166,16 +158,6 @@ void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filt
     // Free the temporary volume
     err = cudaFree(d_data2);
     assert(err == cudaSuccess && "Failed to free the GPU memory from the temporary data2");
-    
-    // Stop and print the time taken for the DWT (DEBUG)
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-    std::cerr << "Time taken (DWT): " << milliseconds << "ms" << std::endl;
-        
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
 
 }
 
@@ -247,12 +229,28 @@ int main(int argc, char *argv[]) {
         // Indicator of the filters sizes to be iterated over
         size_t filter_size;
 
+        // Cuda event used to measure the time taken for the DWT
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+
+        cudaEventRecord(start);
+
         // Copy the db Coeffs to constant memory and Volume to global memory on the GPU
         toGPU(vol_in, db_num, depth, rows, cols, filter_size, d_volume);
         
         // Perform the Cuda 3D DWT in the GPU
         dwt_3d(d_volume, depth, rows, cols, filter_size);
 
+        // Stop and print the time taken for the DWT (DEBUG)
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        float milliseconds = 0;
+        cudaEventElapsedTime(&milliseconds, start, stop);
+        std::cerr << "Time taken (DWT): " << milliseconds << "ms" << std::endl;
+
+        cudaEventDestroy(start);
+        cudaEventDestroy(stop);
         // Copy the transformed volume back to the CPU
         vol_out = volCPU(d_volume, depth, rows, cols);
 
