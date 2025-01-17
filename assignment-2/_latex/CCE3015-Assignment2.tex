@@ -153,7 +153,7 @@ Since the blaiming issue is resolved and we know why our results initially seeme
     \label{fig:9}
 \end{figure}
 
-Figures 6 and 7 confirm results consistent with theoretical expectations. The shared memory implementation shows minimal data transfer time to device memory (0.856 ms) due to the small size of the coefficients. However, kernel execution is slower because shared memory is only accessible to threads within the same block, requiring each block to replicate the shared memory. Conversely, the constant memory implementation incurs a higher transfer time for copying coefficients (7.369 ms) but benefits from device-wide access and caching, adding no overhead to kernel execution. As shown by profiler results, the constant memory implementation is faster and more efficient for this case due to reduced kernel overheads.
+Figures 6 and 7 confirm results consistent with theoretical expectations. The shared memory implementation exhibits minimal data transfer time to device memory (0.856 ms) because of the small size of the coefficients. However, kernel execution is slower as shared memory is only accessible to threads within the same block, requiring each block to replicate the shared memory. In contrast, the constant memory implementation has a higher coefficient transfer time (7.369 ms) but benefits from device-wide access and caching, adding no overhead to kernel execution. Profiler results show that the constant memory implementation is faster and more efficient in this case due to reduced kernel overheads.
 
 \begin{itemize}
     \item \textbf{Shared Memory Time:} Data Transfer Time + Kernel Execution Time = 0.856 ms + 12.439 ms = 13.295 ms
@@ -203,8 +203,7 @@ The final profiler results demonstrate substantial improvements over the unoptim
 
 \section{Computation of speedup}
 
-This section evaluates the speedup achieved through parallelization by comparing the timing results of the reference (serial) and parallel implementations. A subset of the CHAOS dataset was preprocessed in Python to create a smaller version with one-fourth the dimensions of the large dataset. Specifically, the large dataset has dimensions of \(512 \times 512 \times 78\) (columns, rows, depth), while the smaller dataset has dimensions of \(128 \times 128 \times 20\).
-
+This section evaluates the speedup from parallelization by comparing the timing results of the serial and parallel implementations. A subset of the CHAOS dataset was preprocessed in Python, creating a smaller version with one-fourth the dimensions of the large dataset: \(512 \times 512 \times 78\) for the large, and \(128 \times 128 \times 20\) for the smaller dataset.
 
 \begin{figure}[h]
     \centering
@@ -298,4 +297,14 @@ These results show that the theoretical speedup calculated using Amdahl's Law wa
 The primary challenge during parallelization was memory management and handling data dependencies. Flattening the volume, ensuring correct row-major indexing, and accessing the correct data for each thread proved complex. Additionally, managing synchronization and swapping of input and output pointers to process data accurately was initially challenging since the proper management of volume access with the thread and dimension indexing was not being properly assigned.\\
 
 A major challenge that shifted the assignment's scope was implementing a multi-level DWT. Managing subbands and passing them between levels proved too complex within the time constraints. As a result, the focus shifted to a single-level DWT, enabling a more concentrated effort on parallelization and optimization. Future work could revisit multi-level DWT with more time for development.
+
+\begin{thebibliography}{1}
+
+    \bibitem{Siboehm2022}
+    Siboehm, "CUDA Matrix-Matrix Multiplication (MMM)," 2022. [Online]. Available: \url{https://siboehm.com/articles/22/CUDA-MMM}. [Accessed: 17-Jan-2025].
+
+    \bibitem{Copilot2024}
+    GitHub Copilot, "Aided in C++, Python and Latex syntax coding," 2024. [Online]. Available: \url{https://github.com/features/copilot}. [Accessed: 2024].
+
+\end{thebibliography}
 \end{document}
