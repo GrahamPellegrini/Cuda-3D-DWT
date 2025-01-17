@@ -48,7 +48,16 @@ The Makefile has been built to ensure support for the CUDA by using 'nvcc' and r
 
 The main challenge that defines the structure for performing parallel operations is the fact that the volume must be treated as a whole. When performing dimension-wise DWT operations, the entire volume; containing all the rows, columns, and depth—must be considered to ensure the operations are executed correctly. This directly impacts how data management is handled and the order in which kernel operations and threaded access are managed.\\
 
-Previously, the serial implementation consisted of a single 'dwt 1' function that handled the transformation along one dimension. However, in the parallel implementation, three separate kernels are defined, one for each dimension, to minimize excessive copying of temporary data. The 'dwt 3d' function defines a block with a dimension size of (16, 16, 4). Initially, other iterations and tests using fixed block size of (256) or equal dimensions of (8, 8, 8). However, since our volume is more likely to have significantly larger dimensions in the rows and columns than in the depth, the depth (Z-dimension) was given a quarter of the block size. This ensures that the total threads in each block remains a factor 64 (16×16×4 = 1024). The choice of block size strikes a balance between generalization, by avoiding fine-tuning for one specific test volume case, and specification by addressing CT scans and 3D images whoes depth index will be at least four times smaller than the rows and columns constructing each slice.
+Previously, the serial implementation consisted of a single 'dwt 1' function that handled the transformation along one dimension. However, in the parallel implementation, three separate kernels are defined, one for each dimension, to minimize excessive copying of temporary data. The 'dwt 3d' function defines a block with a dimension size of (16, 16, 4). Initially, other iterations and tests using sizes such as (256,1,1), (16,8,8) or (8, 8, 8). 
+\vspace{-1.5em}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.3\textwidth]{assets/block-dims.png}
+    \caption{Different Block Dimensions Tested}
+    \label{fig:0}
+\end{figure}
+\vspace{-0.5em}\\
+However, since our volume is more likely to have significantly larger dimensions in the rows and columns than in the depth, the depth (Z-dimension) was given a quarter of the block size. This ensures that the total threads in each block remains a factor 64 (16×16×4 = 1024). The choice of block size strikes a balance between generalization, by avoiding fine-tuning for one specific test volume case, and specification by addressing CT scans and 3D images whoes depth index will be at least four times smaller than the rows and columns constructing each slice.
 \vspace{-1.2em}
 \begin{figure}[h]
     \centering
@@ -154,34 +163,34 @@ To transfer the 3D volume to device memory, it must first be flattened into a 1D
 \end{equation}  
 This indexing ensures correct mapping by iterating through columns within rows at each depth, then progressing through rows at a depth, and finally across the depths of the volume. Once flattened, the volume is allocated and copied to device memory using `cudaMalloc` and `cudaMemcpy`, ensuring seamless access by the threads in the kernel. It is to be noted that the volume allocation could not be done in a more efficient manner such as using streams and concurrently executed memory transfers due to the nature of the data dependencies and the need for the entire volume to be available for the kernel execution.\\
 
-Lastly, after all kernel calls and the transformed volume has been mapped back to its original pointer, the data must be retrieved from device memory to the host. This is handled by the `toCPU` function, which allocates memory on the host and copies the flattened volume back using `cudaMemcpy`. The volume is then reshaped into its original 3D layout using the inverse of the row-major indexing formula, ensuring the data is correctly ordered for subsequent processing or visualization.
+After all kernel calls and the transformed volume has been mapped back to its original pointer, the data must be retrieved from device memory to the host. This is handled by the `toCPU` function, which allocates memory on the host and copies the flattened volume back using `cudaMemcpy`. The volume is then reshaped into its original 3D layout using the inverse of the row-major indexing formula, ensuring the data is correctly ordered for subsequent processing or visualization.\\
+
+Further analysis of the constant memory implementation revealed an important optimization opportunity. By merging the two sets of constant coefficients for the low-pass and high-pass filters into a single constant memory array, the number of cudaMemcpyToSymbol calls was reduced to one. This change decreased memory transfer time and slightly improved performance. The kernel access logic was updated accordingly, using the coefficient length to determine the starting index of the high-pass coefficients in the array.
+\vspace{-1.2em}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{assets/packed-coeffs.png}
+\caption{Implementation of packed coefficients in a single array}
+\label{fig:8}
+\end{figure}
+\vspace{-0.5em}\\
+Finally, the use of size t variables instead of int is recommended for CUDA development. As a 64-bit unsigned integer type, size t aligns better with device memory and improves efficiency when indexing memory locations.
 
 \section{Profile‐guided optimization:}
-The NVIDIA profiler was previously utilized to analyze memory transfer and kernel execution times. However, further analysis of the constant memory implementation uncovered a minor but significant optimization opportunity. By merging the two sets of constant coefficients for the low-pass and high-pass filters into a single constant memory array, the number of 'cudaMemcpyToSymbol' calls is reduced to one. This consolidation decreases memory transfer time and yields a slight performance improvement. The updated single constant memory array is also reflected in how the kernel accesses the coefficients, with the coefficient length used to determine the index where the high-pass coefficients begin in the array.\\\\\\
+The NVIDIA profiler was previously utilized to analyze memory transfer and kernel execution times. To ensure accurate profiler results and reflect true implementation performance, all print statements and timing operations, such as cudaEvent markers, were wrapped in debug configurations. This eliminated interference from non-essential operations, resulting in more reliable profiler data.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\textwidth]{assets/packed-coeffs.png}
-    \caption{Code implemented to pack the coefficients into a single array}
-    \label{fig:8}
+    \includegraphics[width=0.5\textwidth]{assets/unoptim-sum.png}
+    \caption{Profiler Summary of Unoptimized Code}
+    \label{fig:9}
 \end{figure}
-\vspace{-1.5em}
-Furthermore, to saturate the profiler results and show the true performance of the implementation asserts and debug symbols encased any type of prints and timing operations like the 'cudaEvent' markers. This ensures that the results are not skewed by any other operations other than those necessary for output. The profiler results are now more accurate and show the true performance of the implementation.\\
 
-Finally the noted use of size t variables can be considered as a better practice than int variables when using the CUDA architecture. This is due to size t being a 64-bit unsigned integer type, which is easily aligned in the device memory and can be used to index the memory locations more efficiently. 
+One major shortcoming of the unoptimized code was the high memory access latency, as threads individually accessed global memory for the coefficients. This inefficiency significantly contributed to the high kernel execution times. The profiler summary in Figure 9 highlights this issue, showing that total kernel execution times dominated the performance profile.
 
-\appendices
-\section{Appendix Title}
-Appendix text goes here.
+\begin{figure}[h] \centering \includegraphics[width=0.5\textwidth]{assets/optim-sum.png} \caption{Profiler Summary of Optimized Code} \label{fig:10} \end{figure}
 
-\section*{Acknowledgment}
-The authors would like to thank...
+The final profiler results demonstrate substantial improvements over the unoptimized version. By leveraging constant memory, we introduced a minor overhead during the memory copy to symbols. However, this was outweighed by a significant reduction in kernel execution times, resulting in a marked decrease in the total execution time.
 
-\begin{thebibliography}{1}
-
-\bibitem{IEEEhowto:kopka}
-H.~Kopka and P.~W.~Daly, \emph{A Guide to \LaTeX}, 3rd~ed. Harlow, England: Addison-Wesley, 1999.
-
-\end{thebibliography}
-
+\section{Computation of speedup}
 \end{document}
