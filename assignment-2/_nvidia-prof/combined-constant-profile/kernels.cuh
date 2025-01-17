@@ -9,81 +9,81 @@ const int MAX_FILTER_SIZE = 8;
 // Contant Memory declaration for coefficients
 __constant__ float d_coeff[2*MAX_FILTER_SIZE];
 
-__global__ void row_kernel(float* data, float* temp, size_t filter_size, size_t depth_limit, size_t row_limit, size_t col_limit) {
+__global__ void row_kernel(float* data, float* temp, size_t filter_size, size_t depth, size_t rows, size_t cols) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     size_t d = blockIdx.z * blockDim.z + threadIdx.z;
     size_t c = blockIdx.y * blockDim.y + threadIdx.y;
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (d < depth_limit && c < col_limit && i < row_limit / 2) {
+
+    if (d < depth && c < cols && i < rows / 2) {
         float sum_low = 0.0f;
         float sum_high = 0.0f;
 
         for (size_t j = 0; j < filter_size; ++j) {
-            size_t index = (2 * i + j) % row_limit;
-            size_t data_index = d * row_limit * col_limit + index * col_limit + c;
+            size_t idx = (2 * i + j) % rows;
+            size_t d_idx = d * rows * cols + idx * cols + c;
 
-            float input_val = data[data_index];
-            sum_low += d_coeff[j] * input_val;
-            sum_high += d_coeff[j + filter_size] * input_val;
+            sum_low += d_coeff[j] * data[d_idx];
+            sum_high += d_coeff[j + filter_size] * data[d_idx];
         }
 
-        size_t low_index = d * row_limit * col_limit + i * col_limit + c;
-        size_t high_index = d * row_limit * col_limit + (i + row_limit / 2) * col_limit + c;
+        size_t low_idx = d * rows * cols + i * cols + c;
+        size_t high_idx = d * rows * cols + (i + rows / 2) * cols + c;
 
-        temp[low_index] = sum_low;
-        temp[high_index] = sum_high;
+        temp[low_idx] = sum_low;
+        temp[high_idx] = sum_high;
     }
 }
 
-__global__ void col_kernel(float* data, float* temp, size_t filter_size, size_t depth_limit, size_t row_limit, size_t col_limit) {
+__global__ void col_kernel(float* data, float* temp, size_t filter_size, size_t depth, size_t rows, size_t cols) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     size_t d = blockIdx.z * blockDim.z + threadIdx.z;
     size_t r = blockIdx.y * blockDim.y + threadIdx.y;
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (d < depth_limit && r < row_limit && i < col_limit / 2) {
+
+    if (d < depth && r < rows && i < cols / 2) {
         float sum_low = 0.0f;
         float sum_high = 0.0f;
 
         for (size_t j = 0; j < filter_size; ++j) {
-            size_t index = (2 * i + j) % col_limit;
-            size_t data_index = d * row_limit * col_limit + r * col_limit + index;
+            size_t idx = (2 * i + j) % cols;
+            size_t d_idx = d * rows * cols + r * cols + idx;
 
-            float input_val = data[data_index];
-            sum_low += d_coeff[j] * input_val;
-            sum_high += d_coeff[j + filter_size] * input_val;
+            sum_low += d_coeff[j] * data[d_idx];
+            sum_high += d_coeff[j + filter_size] * data[d_idx];
         }
 
-        size_t low_index = d * row_limit * col_limit + r * col_limit + i;
-        size_t high_index = d * row_limit * col_limit + r * col_limit + (i + col_limit / 2);
+        size_t low_idx = d * rows * cols + r * cols + i;
+        size_t high_idx = d * rows * cols + r * cols + (i + cols / 2);
 
-        temp[low_index] = sum_low;
-        temp[high_index] = sum_high;
+        temp[low_idx] = sum_low;
+        temp[high_idx] = sum_high;
     }
 }
 
-__global__ void depth_kernel(float* data, float* temp, size_t filter_size, size_t depth_limit, size_t row_limit, size_t col_limit) {
+__global__ void depth_kernel(float* data, float* temp, size_t filter_size, size_t depth, size_t rows, size_t cols) {
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     size_t r = blockIdx.z * blockDim.z + threadIdx.z;
     size_t c = blockIdx.y * blockDim.y + threadIdx.y;
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (r < row_limit && c < col_limit && i < depth_limit / 2) {
+
+    if (r < rows && c < cols && i < depth / 2) {
         float sum_low = 0.0f;
         float sum_high = 0.0f;
 
         for (size_t j = 0; j < filter_size; ++j) {
-            size_t index = (2 * i + j) % depth_limit;
-            size_t data_index = index * row_limit * col_limit + r * col_limit + c;
+            size_t idx = (2 * i + j) % depth;
+            size_t d_idx = idx * rows * cols + r * cols + c;
 
-            float input_val = data[data_index];
-            sum_low += d_coeff[j] * input_val;
-            sum_high += d_coeff[j + filter_size] * input_val;
+            sum_low += d_coeff[j] * data[d_idx];
+            sum_high += d_coeff[j + filter_size] * data[d_idx];
         }
 
-        size_t low_index = i * row_limit * col_limit + r * col_limit + c;
-        size_t high_index = (i + depth_limit / 2) * row_limit * col_limit + r * col_limit + c;
+        size_t low_idx = i * rows * cols + r * cols + c;
+        size_t high_idx = (i + depth / 2) * rows * cols + r * cols + c;
 
-        temp[low_index] = sum_low;
-        temp[high_index] = sum_high;
+        temp[low_idx] = sum_low;
+        temp[high_idx] = sum_high;
     }
 }
 
