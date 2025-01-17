@@ -4,5 +4,3 @@ Try the 'nsys status --environment' command to learn more.
 WARNING: CPU context switch tracing not supported, disabling.
 Try the 'nsys status --environment' command to learn more.
 
-Combined Coeffs -> Const Mem: 6.72941ms
-DWT Kernels: 4.45949ms

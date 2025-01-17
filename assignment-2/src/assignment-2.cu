@@ -45,23 +45,26 @@ void toGPU(std::vector<std::vector<std::vector<float>>> volume, size_t db_num, s
     // Make sure the data is aligned in memory
     assert(reinterpret_cast<uintptr_t>(combined_coeff.data()) % 16 == 0 && "Data is not 16-byte aligned");
 
-  
-    // Make a cuda event to calculate the time taken by the mem copy
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start);
+    #ifdef DEBUG
+        // Make a cuda event to calculate the time taken by the mem copy
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+        cudaEventRecord(start);
+    #endif
 
 
     cudaError_t err = cudaMemcpyToSymbol(d_coeff, combined_coeff.data(), filter_size * 2 * sizeof(float));
     assert(err == cudaSuccess && "Failed to copy coefficients to constant memory");
-
-    // Stop and print the time taken for the mem copy (Not DEBUG)
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    auto time_taken = 0.0f;
-    cudaEventElapsedTime(&time_taken, start, stop);
-    std::cerr << "Combined Coeffs -> Const Mem: " << time_taken << "ms" << std::endl;
+    
+    #ifdef DEBUG
+        // Stop and print the time taken for the mem copy (DEBUG)
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        auto time_taken = 0.0f;
+        cudaEventElapsedTime(&time_taken, start, stop);
+        std::cerr << "Combined Coeffs -> Const Mem: " << time_taken << "ms" << std::endl;
+    #endif
 
     // Flatten the 3D volume into a 1D vector (row-major order)
     std::vector<float> flat_volume(depth * rows * cols);
@@ -116,13 +119,15 @@ std::vector<std::vector<std::vector<float>>> volCPU(float* d_volume, size_t dept
 
 // Function to perform the 3D DWT on the GPU using the CUDA kernels
 void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filter_size) 
-{
-    // Cuda event used to measure the time taken for the DWT
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+{   
+    #ifdef DEBUG
+        // Cuda event used to measure the time taken for the DWT
+        cudaEvent_t start, stop;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
 
-    cudaEventRecord(start);
+        cudaEventRecord(start);
+    #endif
 
     // Set and allocate the temporary data pointers
     float* d_data1 = d_volume;
@@ -162,16 +167,18 @@ void dwt_3d(float* d_volume, size_t depth, size_t rows, size_t cols, size_t filt
     // Free the temporary volume
     err = cudaFree(d_data2);
     assert(err == cudaSuccess && "Failed to free the GPU memory from the temporary data2");
-
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-    // Stop and print the time taken for the DWT (Not DEBUG)
-    std::cerr << "DWT Kernels: " << milliseconds << "ms" << std::endl;
     
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
+    #ifdef DEBUG
+        // Stop and print the time taken for the DWT (DEBUG)
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        float milliseconds = 0;
+        cudaEventElapsedTime(&milliseconds, start, stop);
+        std::cerr << "DWT Kernels: " << milliseconds << "ms" << std::endl;
+        
+        cudaEventDestroy(start);
+        cudaEventDestroy(stop);
+    #endif
 }
 
 
