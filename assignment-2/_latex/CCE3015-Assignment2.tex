@@ -31,7 +31,14 @@
 
 The first assignment focused on the serial implementation of a Multi-Level 3D Discrete Wavelet Transform (DWT). For this assignment, the scope shifted to a single-level 3D DWT to emphasize parallelization using CUDA. Feedback from the previous assignment was incorporated to meet the requirements.\\
 
-The report format, previously incorrect, has been updated to the IEEE Signal Processing template, with a double-column layout and minimum 11pt font size. Additionally, this report provides a more detailed analysis of testing and results, including the suggested inverse transform ('idwt.h') for comparison with the original image.\\
+The report format, previously incorrect, has been updated to the IEEE Signal Processing template, with a double-column layout and minimum 11pt font size. Additionally, this report provides a more detailed analysis of testing and results, including the suggested inverse transform ('idwt.h') for comparison with the original image. Note the inverse image in figure 0 is lower quality due to the lossy nature of the DWT and a descrepancy of 1 in the depth occurs due to the dividing by 2 and rounding down and then multiplying by 2 again.\\
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{assets/inverse.png}
+    \caption{Original vs Inverse Image}
+    \label{fig:1}
+\end{figure}
 
 Earlier plans proposed parallelizing all three dimensions of the 3D DWT simultaneously, but feedback noted that dependencies between dimensions made this infeasible. Instead, dimensions are processed sequentially, with separate kernels for each, and synchronization ensures one dimension's transform completes before the next begins. Contrary to earlier assumptions, no synchronization is needed within kernels, as thread indexing determines the section of the volume to process. Proper block and grid calculations ensure efficient thread management within the defined scope.\\
 
@@ -49,23 +56,20 @@ The Makefile has been built to ensure support for the CUDA by using 'nvcc' and r
 The main challenge that defines the structure for performing parallel operations is the fact that the volume must be treated as a whole. When performing dimension-wise DWT operations, the entire volume; containing all the rows, columns, and depth—must be considered to ensure the operations are executed correctly. This directly impacts how data management is handled and the order in which kernel operations and threaded access are managed.\\
 
 Previously, the serial implementation consisted of a single 'dwt 1' function that handled the transformation along one dimension. However, in the parallel implementation, three separate kernels are defined, one for each dimension, to minimize excessive copying of temporary data. The 'dwt 3d' function defines a block with a dimension size of (16, 16, 4). Initially, other iterations and tests using sizes such as (256,1,1), (16,8,8) or (8, 8, 8). 
-\vspace{-1.5em}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.3\textwidth]{assets/block-dims.png}
     \caption{Different Block Dimensions Tested}
-    \label{fig:0}
+    \label{fig:2}
 \end{figure}
-\vspace{-0.5em}\\
 However, since our volume is more likely to have significantly larger dimensions in the rows and columns than in the depth, the depth (Z-dimension) was given a quarter of the block size. This ensures that the total threads in each block remains a factor 64 (16×16×4 = 1024). The choice of block size strikes a balance between generalization, by avoiding fine-tuning for one specific test volume case, and specification by addressing CT scans and 3D images whoes depth index will be at least four times smaller than the rows and columns constructing each slice.
-\vspace{-1.2em}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/grid_block.png}
     \caption{Grid and Block Dimensions 3D division [1]}
-    \label{fig:1}
+    \label{fig:3}
 \end{figure}
-\vspace{-0.2em}\\
 After defining the suitable block dimensions as (16, 16, 4), we move up and needed to compute the appropriate grid dimensions for the thread access to ensure that the entire 3D volume is accounted for. The grid dimensions are calculated by dividing the total number of rows/columns/depth by the corresponding block dimensions axis. However, since this division may not result in a whole number, the formula includes an adjustment to ensure full coverage of the data. Specifically, we add the block dimension minus one to the total size before performing integer division:
 
 \begin{equation}
@@ -86,10 +90,10 @@ So for our 3D grids and blocks, the grid dimensions for example the rows kernel 
         \Bigg)
     \end{aligned}
 \end{equation}
- 
-With the thread access structure defined, we can examine the kernel implementation. Each kernel identifies the specific row, column, and depth indexes to process based on thread and block indexes. It validates that these indexes are within bounds, skipping transformations for out-of-bound indexes. Once validated, the kernel performs the 1D DWT operation along the respective dimension, calculating the sum of the low and high components and storing them in the flattened row-major order. Each kernel uses two float pointers in device memory: one for input data and one for temporary output data.\\
 
-In the `dwt 3d` function, these pointers are swapped after each kernel call to ensure data dependencies are correctly handled between dimensions. After the 1D DWT kernels, a mapping kernel reorders the transformed volume back to its original layout using thread indexes. This mapping function, initially designed for a multi-level implementation, was retained to ensure accurate reordering of transformed data. Once complete, the temporary volume is freed, and the final data is returned to the host.
+The kernel implementation identifies row, column, and depth indexes based on thread and block indexes, validating them to ensure bounds are respected. It then performs the 1D DWT along the respective dimension and stores results in a flattened row-major order. Two float pointers for input and temporary output data are used in device memory.\\
+
+In the `dwt 3d` function, these pointers are swapped after each kernel to handle data dependencies. A mapping kernel then reorders the transformed volume back to its original layout. This mapping function, initially intended for multi-level DWT, ensures accurate data reordering. After completion, the temporary volume is freed, and the final data is returned to the host.
 
 \section{Effective Use Of Advanced Facilities}
 
@@ -102,19 +106,19 @@ For shared memory, additional float pointers are created for the coefficients al
 For constant memory, the coefficients are declared as constant memory in the kernel file. In `toGPU`, no memory allocation is required; instead, `cudaMemcpyToSymbol` copies the coefficients to constant memory. This memory is read-only, cached on the device, and allows kernels to access it faster than global memory.\\
 
 Both implementations were analyzed using the NVIDIA profiler, focusing on data transfer times and kernel performance. It was noted that during profiling, CUDA initialization timings obscured the initial `cudaMalloc` and `cudaMemcpyToSymbol` timings.
-\vspace{-1.2em}\\
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/blamed-mem.png}
     \caption{cudaMemcpyToSymbol blamed for initalization time}
-    \label{fig:2}
+    \label{fig:4}
 \end{figure}
-\vspace{-0.2em}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/blamed-mem-sum.png}
     \caption{Summary showing abnormally high cudaMemcpyToSymbol time}
-    \label{fig:3}
+    \label{fig:5}
 \end{figure}
 
 Since the initial CUDA calls were responsible for initialization, the profiler attributed their timings to initialization overhead. To address this, additional `cudaEvent` markers were added to measure the memory transfer time. These events also reflected initialization timings, but they allowed for isolating the actual time taken for memory transfers after initialization.
@@ -123,30 +127,30 @@ Since the initial CUDA calls were responsible for initialization, the profiler a
     \centering
     \includegraphics[width=0.5\textwidth]{assets/blamed-event.png}
     \caption{cudaEvent blamed for initalization time}
-    \label{fig:4}
+    \label{fig:6}
 \end{figure}
-\vspace{-0.2em}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/blamed-event-sum.png}
     \caption{Summary showing blamed time moved to cudaEvent}
-    \label{fig:5}
+    \label{fig:7}
 \end{figure}
 
 Since the blaiming issue is resolved and we know why our results initially seemed to be obscured by so much we can foucs back on the comparision between shared memory and constant memory. Each case will be analysed with the NVIDIA profiler and confiremd with a cudaEvent record of the time taken for the both the memory transfer and the kernel execution.
-\vspace{-1em}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/shared-prof.png}
     \caption{Shared Memory Profiling Results}
-    \label{fig:6}
+    \label{fig:8}
 \end{figure}
-\vspace{-2em}
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/const-prof.png}
     \caption{Constant Memory Profiling Results}
-    \label{fig:7}
+    \label{fig:9}
 \end{figure}
 
 Figures 6 and 7 confirm results consistent with theoretical expectations. The shared memory implementation shows minimal data transfer time to device memory (0.856 ms) due to the small size of the coefficients. However, kernel execution is slower because shared memory is only accessible to threads within the same block, requiring each block to replicate the shared memory. Conversely, the constant memory implementation incurs a higher transfer time for copying coefficients (7.369 ms) but benefits from device-wide access and caching, adding no overhead to kernel execution. As shown by profiler results, the constant memory implementation is faster and more efficient for this case due to reduced kernel overheads.
@@ -166,14 +170,14 @@ This indexing ensures correct mapping by iterating through columns within rows a
 After all kernel calls and the transformed volume has been mapped back to its original pointer, the data must be retrieved from device memory to the host. This is handled by the `toCPU` function, which allocates memory on the host and copies the flattened volume back using `cudaMemcpy`. The volume is then reshaped into its original 3D layout using the inverse of the row-major indexing formula, ensuring the data is correctly ordered for subsequent processing or visualization.\\
 
 Further analysis of the constant memory implementation revealed an important optimization opportunity. By merging the two sets of constant coefficients for the low-pass and high-pass filters into a single constant memory array, the number of cudaMemcpyToSymbol calls was reduced to one. This change decreased memory transfer time and slightly improved performance. The kernel access logic was updated accordingly, using the coefficient length to determine the starting index of the high-pass coefficients in the array.
-\vspace{-1.2em}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.5\textwidth]{assets/packed-coeffs.png}
 \caption{Implementation of packed coefficients in a single array}
-\label{fig:8}
+\label{fig:10}
 \end{figure}
-\vspace{-0.5em}\\
+
 Finally, the use of size t variables instead of int is recommended for CUDA development. As a 64-bit unsigned integer type, size t aligns better with device memory and improves efficiency when indexing memory locations.
 
 \section{Profile‐guided optimization:}
@@ -183,12 +187,17 @@ The NVIDIA profiler was previously utilized to analyze memory transfer and kerne
     \centering
     \includegraphics[width=0.5\textwidth]{assets/unoptim-sum.png}
     \caption{Profiler Summary of Unoptimized Code}
-    \label{fig:9}
+    \label{fig:11}
 \end{figure}
 
 One major shortcoming of the unoptimized code was the high memory access latency, as threads individually accessed global memory for the coefficients. This inefficiency significantly contributed to the high kernel execution times. The profiler summary in Figure 9 highlights this issue, showing that total kernel execution times dominated the performance profile.
 
-\begin{figure}[h] \centering \includegraphics[width=0.5\textwidth]{assets/optim-sum.png} \caption{Profiler Summary of Optimized Code} \label{fig:10} \end{figure}
+\begin{figure}[h] 
+    \centering 
+    \includegraphics[width=0.5\textwidth]{assets/optim-sum.png} 
+    \caption{Profiler Summary of Optimized Code} 
+    \label{fig:12} 
+\end{figure}
 
 The final profiler results demonstrate substantial improvements over the unoptimized version. By leveraging constant memory, we introduced a minor overhead during the memory copy to symbols. However, this was outweighed by a significant reduction in kernel execution times, resulting in a marked decrease in the total execution time.
 
@@ -201,14 +210,14 @@ This section evaluates the speedup achieved through parallelization by comparing
     \centering
     \includegraphics[width=0.5\textwidth]{assets/1-subset.png}
     \caption{Timing results for reference implementation (small set)}
-    \label{fig:11}
+    \label{fig:13}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/1-large.png}
     \caption{Timing results for reference implementation (large set)}
-    \label{fig:12}
+    \label{fig:14}
 \end{figure}
 
 The small dataset executes faster than the large one due to fewer iterations in the serial implementation. While the parallel implementation follows a similar trend, the difference might be less pronounced, as it benefits more from optimized block execution than reduced iterations.
@@ -217,7 +226,7 @@ The small dataset executes faster than the large one due to fewer iterations in 
     \centering
     \includegraphics[width=0.5\textwidth]{assets/correct-device.png}
     \caption{Appropriate selection of device for parallel results}
-    \label{fig:13}
+    \label{fig:15}
 \end{figure}
 
 The snippet in Figure 13 shows that the appropriate device is being selected as '.sh' file includes 'nvidia-smi' to output the device information. This ensures that the parallel results are being executed on the correct device as stated in the requirements.
@@ -226,14 +235,14 @@ The snippet in Figure 13 shows that the appropriate device is being selected as 
     \centering
     \includegraphics[width=0.5\textwidth]{assets/2-subset.png}
     \caption{Timing results for parallel implementation (small set)}
-    \label{fig:14}
+    \label{fig:16}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{assets/2-large.png}
     \caption{Timing results for parallel implementation (large set)}
-    \label{fig:15}
+    \label{fig:17}
 \end{figure}
 
 The parallel implementation shows a significant speedup over the serial implementation. The actual comparision will be done in the following section where it will be compared with the theoretical speedup acievable.
@@ -285,5 +294,8 @@ The actual speedup achieved in the parallel implementation is calculated as:
 
 These results show that the theoretical speedup calculated using Amdahl's Law was significantly overestimated. Additionally, the actual speedup is lower, and for the small dataset, there is a slowdown due to memory transfer overhead. This indicates that the parallel implementation is only effective for large datasets, where the overhead is amortized over a greater number of iterations.
 
-\section(Discussion of difficulties)
+\section{Discussion of difficulties}
+The primary challenge during parallelization was memory management and handling data dependencies. Flattening the volume, ensuring correct row-major indexing, and accessing the correct data for each thread proved complex. Additionally, managing synchronization and swapping of input and output pointers to process data accurately was initially challenging since the proper management of volume access with the thread and dimension indexing was not being properly assigned.\\
+
+A major challenge that shifted the assignment's scope was implementing a multi-level DWT. Managing subbands and passing them between levels proved too complex within the time constraints. As a result, the focus shifted to a single-level DWT, enabling a more concentrated effort on parallelization and optimization. Future work could revisit multi-level DWT with more time for development.
 \end{document}

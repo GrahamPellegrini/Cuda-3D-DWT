@@ -1,7 +1,7 @@
 # Fdb version 3
-["pdflatex"] 1737117582 "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" "CCE3015-Assignment2.pdf" "CCE3015-Assignment2" 1737117583
+["pdflatex"] 1737119187 "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" "CCE3015-Assignment2.pdf" "CCE3015-Assignment2" 1737119188
   "/etc/texmf/web2c/texmf.cnf" 1699451927 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" 1737117582 22179 87a75ffda036e53e4f8f1f1cca5dbde6 ""
+  "/home/grahampelle/cce3015/assignment-2/_latex/CCE3015-Assignment2.tex" 1737119187 22921 90c433ce692155a4a66f6535783c0ce3 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -82,8 +82,8 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1644012257 39432 7155514e09a3d69036fac785183a21c2 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1736943609 4271278 08815d8b34a5869b952b1c250285f85d ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1736943626 1435889 1b35d29763c5f2c43f0413620076c8dd ""
-  "CCE3015-Assignment2.aux" 1737117583 3633 a8a646929aaad17e3098a560c20ec4de "pdflatex"
-  "CCE3015-Assignment2.tex" 1737117582 22179 87a75ffda036e53e4f8f1f1cca5dbde6 ""
+  "CCE3015-Assignment2.aux" 1737119188 3907 ec970338e44a12f5de0933806d2a3b76 "pdflatex"
+  "CCE3015-Assignment2.tex" 1737119187 22921 90c433ce692155a4a66f6535783c0ce3 ""
   "IEEEtran.cls" 1737018297 288451 2ca944e3837f3f55e325ddfd2f1a2479 ""
   "assets/1-large.png" 1737117302 8310 c50850ae49693bad77eab0f7722cbc4a ""
   "assets/1-subset.png" 1737117302 8929 ff6e6437b93cf215b4d8a91120f4a282 ""
@@ -97,6 +97,7 @@
   "assets/const-prof.png" 1737062288 115862 33bd2428e6b6ebedbea78c92801faf55 ""
   "assets/correct-device.png" 1737113601 18930 e46a805ff591ddffa0bf9417fa486dcc ""
   "assets/grid_block.png" 1737068260 78310 33f5e5caa068698aa9ef213ddc98c6d0 ""
+  "assets/inverse.png" 1737118629 152030 87e0f0fd92d4fe9061abb66b406f9e9d ""
   "assets/optim-sum.png" 1737109527 182258 935758e7736a20482f95fd5fe17580b4 ""
   "assets/packed-coeffs.png" 1737073025 35413 ddbb2dab737c91a9e3333390271c5b73 ""
   "assets/shared-prof.png" 1737108110 96569 0ddc7e9e9a86a5ebc2154d9f61318eb5 ""
