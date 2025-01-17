@@ -30,4 +30,4 @@ make
 # Give the makefile time to finish making binaries
 sleep 5
 # Run your C++ binary with the desired arguments for assignment 1
-./bin/assignment-1 file/input.bin file/single_haar.bin 1 1 
+./bin/assignment-1 file/subset4.bin file/single_haar.bin 1 1 

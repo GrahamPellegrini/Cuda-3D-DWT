@@ -56,7 +56,7 @@ void dwt_1d(std::vector<float>& signal, int db_num) {
 // Function to perform 3D DWT on a 3D volume
 void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
     // Start timer to measure time taken for a single 3D DWT
-    auto dwt_s = std::chrono::high_resolution_clock::now();
+    // auto dwt_s = std::chrono::high_resolution_clock::now();
 
     // Get the shape of the volume
     int depth = volume.size();
@@ -99,19 +99,19 @@ void dwt_3D(std::vector<std::vector<std::vector<float>>>& volume, int db_num) {
     }
 
     // Stop timer
-    auto dwt_e = std::chrono::high_resolution_clock::now();
+    //auto dwt_e = std::chrono::high_resolution_clock::now();
     // Calculate the duration
-    std::chrono::duration<double> dwt_d = dwt_e - dwt_s;
+    //std::chrono::duration<double> dwt_d = dwt_e - dwt_s;
 
     // Log the time taken for the DWT
-    std::cerr << "Time taken (single 3D DWT): " << dwt_d.count() << " seconds" << std::endl;
+    //std::cerr << "Time taken (single 3D DWT): " << dwt_d.count() << " seconds" << std::endl;
     
 }
 
 // Function to perform multi-level 3D DWT on a 3D volume
 void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_num, int levels) {
     // Start timer to measure time taken for mutli-level DWT
-    auto multi_s = std::chrono::high_resolution_clock::now();
+    // auto multi_s = std::chrono::high_resolution_clock::now();
 
     // Get the shape of the volume
     int depth = volume.size();
@@ -145,18 +145,18 @@ void multi_level (std::vector<std::vector<std::vector<float>>>& volume, int db_n
 
     
     // Stop timer
-    auto multi_e = std::chrono::high_resolution_clock::now();
+    // auto multi_e = std::chrono::high_resolution_clock::now();
     // Calculate the duration
-    std::chrono::duration<double> multi_d = multi_e - multi_s;
+    // std::chrono::duration<double> multi_d = multi_e - multi_s;
 
     // If there's a condition you want to assert, do that separately
-    assert(levels > 0 && "Levels should be greater than 0 after processing.");
+    // assert(levels > 0 && "Levels should be greater than 0 after processing.");
 
     // Log the time taken for the DWT
-    std::cerr << "Time taken (multi-level DWT): " << multi_d.count() << " seconds" << std::endl;
+    // std::cerr << "Time taken (multi-level DWT): " << multi_d.count() << " seconds" << std::endl;
 
     // Assert a condition if necessary
-    assert(dwt_d.count() >= 0 && "Time taken should be non-negative.");
+    // assert(dwt_d.count() >= 0 && "Time taken should be non-negative.");
 }
 
 
@@ -183,9 +183,19 @@ int main(int argc, char *argv[]) {
 
     // Load the 3D slice from the binary file
     std::vector<std::vector<std::vector<float>>> volume = loadvolume(bin_in);
+    
 
+    // Start a timer for the DWT
+    auto dwt_s = std::chrono::high_resolution_clock::now();
     // Perform the multi-level DWT on the 3D volume
     multi_level(volume, db_num, levels);
+    // Stop the timer
+    auto dwt_e = std::chrono::high_resolution_clock::now();
+    // Calculate the duration in milliseconds
+    std::chrono::duration<double, std::milli> dwt_d = dwt_e - dwt_s;
+    // Log the time taken for the DWT in milliseconds
+    std::cerr << "Time Taken (DWT): " << dwt_d.count() << " ms" << std::endl;
+
 
     // Save the 3D volume to the binary file
     savevolume(volume, bin_out);
@@ -193,13 +203,10 @@ int main(int argc, char *argv[]) {
     // Stop the global timer
     auto end = std::chrono::high_resolution_clock::now();
     // Calculate the duration
-    std::chrono::duration<double> t = end - start;
-
-    // Log a success message
-    // std::cerr << "Program completed successfully" << std::endl;
+    std::chrono::duration<double, std::milli> t = end - start;
     
     // Log the time taken for the program
-    std::cerr << "Total time taken: " << t.count()<< " seconds" << std::endl;
+    std::cerr << "Total time taken: " << t.count() << " ms" << std::endl;
 
     return EXIT_SUCCESS;
 }
