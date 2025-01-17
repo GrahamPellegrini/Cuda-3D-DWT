@@ -25,6 +25,9 @@ cd /opt/users/gpel0001/cce3015/assignment-2
 # Show the Cuda version to be used
 nvcc --version
 
+# Show the device to be used
+nvidia-smi
+
 # Clean old binaries and check for failure
 make clean
 
