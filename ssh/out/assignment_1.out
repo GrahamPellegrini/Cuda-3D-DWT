@@ -1,3 +1,0 @@
-rm -f ./bin/assignment-1.o ./bin/assignment-1
-g++ -Wall -Wextra -std=c++11 -O2 -DNDEBUG -c src/assignment-1.cpp -o bin/assignment-1.o -I./include
-g++ -Wall -Wextra -std=c++11 -O2 -DNDEBUG -o bin/assignment-1 bin/assignment-1.o -I./include
