@@ -1,0 +1,12 @@
+WARNING: CPU IP/backtrace sampling not supported, disabling.
+Try the 'nsys status --environment' command to learn more.
+
+WARNING: CPU context switch tracing not supported, disabling.
+Try the 'nsys status --environment' command to learn more.
+
+Assignment 2: CUDA Implementation of 3D DWT
+Volume dimensions: 78x512x512
+Coefficients -> Global: 1.66816 ms
+DWT Kernels: 31.9706 ms
+Volume dimensions after DWT: 78x512x512
+Total time taken: 1.53769 seconds

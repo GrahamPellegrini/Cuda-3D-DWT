@@ -4,6 +4,9 @@ aws_credentials.txt
 # Ignore the Venv
 cce3015-venv/
 
+# Ignore the ssh
+ssh/
+
 # Ignore the PGM image files
 big_building-crop.pgm
 big_building.pgm
