@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This repository presents both a **serial and parallel CUDA implementation** of the **3D Discrete Wavelet Transform (3D-DWT)** developed for the study unit **CCE3015 – High Performance Computing** at the **University of Malta**, under the supervision of **Prof. Johann A. Briffa**.
+This repository presents both a **serial and parallel CUDA implementation** of the **3D Discrete Wavelet Transform (3D-DWT)** developed for the study unit [**CCE3015 – High Performance Computing**](https://www.um.edu.mt/courses/studyunit/CCE3015) at the [**University of Malta**](https://www.um.edu.mt/), under the supervision of [**Prof. Johann A. Briffa**](https://www.um.edu.mt/profile/johannbriffa).
 
 The project aims to transform large 3D volumetric datasets (e.g., medical CT/MRI scans) using the DWT, a foundational technique in signal processing. 
 
@@ -16,18 +16,11 @@ Documentation and reports for both implementations are included in the `docs/` a
 The serial implementation performs a full **multi-level 3D-DWT** and its **inverse transform**. It processes the input volume dimension-wise (X, Y, Z), recursively transforming the `LLL` sub-band at each level.
 
 - Developed for **Assignment 1** of the course.
-- Core logic resides in `src/serial/`.
-- Builds as a standalone binary via the provided `Makefile`.
+- Core logic resides in a separate repository.
 - Tested and benchmarked using a subset of the **CHAOS Challenge** dataset.
 - Generates outputs such as forward and inverse transformed volumes.
 
-Shell execution was facilitated via the university's SLURM scheduler:
-
-```bash
-bash assignment-1.sh
-```
-
-See `assignment-1.sh` for full resource and job configuration.
+SLURM was used to submit batch jobs to the university GPU cluster using `sbatch`.
 
 
 ## Core Parallelization Objective
@@ -41,33 +34,23 @@ Assignment 2 builds upon the serial version by porting the DWT algorithm to **CU
 
 Due to complexity in managing sub-bands and dependencies, the CUDA version was scoped to a **single-level DWT**. However, it lays a strong foundation for future extension to full multi-level transforms.
 
-Shell execution was configured via:
 
-```bash
-bash assignment-2.sh
-```
-
-This file includes SLURM batch commands to submit GPU jobs on the University of Malta compute cluster.
-
-
-## Folder Structure
+## Folder Structure (Parallel)
 
 ```
 .
-├── data/                # Sample binary input volumes (CHAOS dataset)
-├── docs/                # Report PDFs for both assignments
-├── latex/               # IEEE-formatted LaTeX source for reports
-├── include/             # Header files (kernels, I/O, inverse DWT)
-├── src/                 # Source code for serial and parallel implementations
-│   ├── assignment-1.cpp     # Serial Multi-Level 3D DWT
-│   ├── assignment-2.cu      # CUDA Single-Level 3D DWT
-│   ├── kernels.cuh          # 1D kernel logic
-│   ├── idwt.h               # Inverse DWT (serial only)
-│   ├── loadbin.h, savebin.h # Binary I/O helpers
-├── assignment-1.sh      # SLURM batch file for serial execution
-├── assignment-2.sh      # SLURM batch file for parallel execution
-├── Makefile             # Supports release, debug, and profiler builds
-└── README.md            # Project documentation
+├── Parallel/
+│   ├── data/              # Input and output binary volume files
+│   ├── docs/              # Assignment 2 report
+│   ├── include/           # Header files for CUDA kernels and utilities
+│   ├── src/               # Main CUDA implementation
+│   │   ├── assignment-2.cu
+│   │   ├── kernels.cuh
+│   │   ├── idwt.h
+│   │   ├── loadbin.h, savebin.h
+│   ├── latex/             # LaTeX source for report
+│   ├── Makefile           # Build system (debug, release, profiler targets)
+└── README.md
 ```
 
 
@@ -109,7 +92,7 @@ CUDA acceleration proves effective for large datasets where the cost of memory t
 ### Compile
 From project root:
 ```bash
-cd src
+cd Parallel
 make release         # Optimized build
 make debug           # Debug build
 make nsys / make ncu # For profiling builds
@@ -118,16 +101,21 @@ make nsys / make ncu # For profiling builds
 
 ## Run Instructions
 
-### Serial
+### Serial (for reference)
 ```bash
-./bin/assignment-1 file/subset4.bin file/single_haar.bin 1 1
+./bin/assignment-1 <input_volume_file> <output_volume_file> <db_num> <levels>
 ```
+- `db_num`: Index of the Daubechies wavelet filter
+- `levels`: Number of DWT decomposition levels to apply
 
-### CUDA
+### CUDA (Parallel)
 ```bash
-./bin/assignment-2 file/input.bin file/single_haar.bin 1 0
+./bin/assignment-2 <input_volume_file> <output_volume_file> <db_num> <inverse_flag>
 ```
-Use the `.sh` batch scripts to run on remote GPU compute clusters via SLURM.
+- `db_num`: Index of the Daubechies wavelet filter
+- `inverse_flag`: `0` for forward transform, `1` for inverse (serial fallback only)
+
+SLURM was used with `sbatch` to submit batch jobs to the GPU cluster.
 
 
 ## Dataset
@@ -140,10 +128,10 @@ The CHAOS dataset was used for performance testing:
 
 ## Acknowledgements
 
-- University of Malta – Faculty of ICT  
-- Prof. Johann A. Briffa – Lecturer & Supervisor  
-- CHAOS Challenge Dataset authors  
-- GitHub Copilot (for minor code suggestion assistance)
+- [University of Malta – Faculty of ICT](https://www.um.edu.mt/ict)
+- [Prof. Johann A. Briffa – Lecturer & Supervisor](https://www.um.edu.mt/profile/johannbriffa)
+- [CHAOS Challenge Dataset](https://chaos.grand-challenge.org/Download/)
+- [GitHub Copilot](https://github.com/features/copilot) (for minor code suggestion assistance)
 
 
 ## Author
