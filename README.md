@@ -1,133 +1,154 @@
 # CUDA 3D Discrete Wavelet Transform (3D-DWT)
 
-## Overview
+## Project Overview
 
-This project was developed as part of the **CCE3015 – High Performance Computing** course at the **University of Malta**, under the supervision of **Prof. Johann A. Briffa**. It represents the second phase of a two-part assignment, focusing on GPU-accelerated parallelization of a 3D Discrete Wavelet Transform (3D-DWT) using CUDA.
+This repository presents both a **serial and parallel CUDA implementation** of the **3D Discrete Wavelet Transform (3D-DWT)** developed for the study unit **CCE3015 – High Performance Computing** at the **University of Malta**, under the supervision of **Prof. Johann A. Briffa**.
 
-The implementation uses sample data from the **CHAOS Challenge** dataset:
+The project aims to transform large 3D volumetric datasets (e.g., medical CT/MRI scans) using the DWT, a foundational technique in signal processing. 
 
-> *Kavur, A. E., et al. (2021). "CHAOS Challenge - Combined (CT-MR) Healthy Abdominal Organ Segmentation."*  
-> Download available at: [CHAOS Challenge](https://chaos.grand-challenge.org/Download/)
+While the **serial version** includes a complete **multi-level DWT** and its inverse, the **CUDA implementation focuses on a single-level DWT**, optimized for GPU acceleration due to time and resource constraints.
 
----
+Documentation and reports for both implementations are included in the `docs/` and `latex/` directories.
 
-## Project Summary
 
-This project adapts a serial 3D-DWT algorithm into a CUDA-parallelized version. Due to time constraints, only **single-level decomposition** is implemented, with a strong emphasis on GPU optimization and memory management. Multi-level DWT and inverse transforms are included in the serial version but not parallelized.
+## Serial Implementation
 
----
+The serial implementation performs a full **multi-level 3D-DWT** and its **inverse transform**. It processes the input volume dimension-wise (X, Y, Z), recursively transforming the `LLL` sub-band at each level.
 
-## Key Features
+- Developed for **Assignment 1** of the course.
+- Core logic resides in `src/serial/`.
+- Builds as a standalone binary via the provided `Makefile`.
+- Tested and benchmarked using a subset of the **CHAOS Challenge** dataset.
+- Generates outputs such as forward and inverse transformed volumes.
 
-- ✅ CUDA-based implementation of 3D Discrete Wavelet Transform (DWT)
-- 📦 Support for different 3D volume sizes (e.g., medical CT scan volumes)
-- 🧠 Memory optimization using **constant vs shared memory** strategies
-- 📊 Performance profiling using **NVIDIA Nsight and `cudaEvent`**
-- 📁 Reports documenting both serial and parallel approaches included in `docs/`
+Shell execution was facilitated via the university's SLURM scheduler:
 
----
+```bash
+bash assignment-1.sh
+```
 
-## Project Structure
+See `assignment-1.sh` for full resource and job configuration.
+
+
+## Core Parallelization Objective
+
+Assignment 2 builds upon the serial version by porting the DWT algorithm to **CUDA**, aiming to leverage parallel GPU processing for high-volume datasets. The parallel implementation includes:
+
+- CUDA kernel development for X, Y, Z axis transforms.
+- Flattened memory layout for efficient GPU access.
+- Evaluation of **shared vs constant memory** strategies.
+- Profiling with `cudaEvent`, Nsight, and NVIDIA CLI tools.
+
+Due to complexity in managing sub-bands and dependencies, the CUDA version was scoped to a **single-level DWT**. However, it lays a strong foundation for future extension to full multi-level transforms.
+
+Shell execution was configured via:
+
+```bash
+bash assignment-2.sh
+```
+
+This file includes SLURM batch commands to submit GPU jobs on the University of Malta compute cluster.
+
+
+## Folder Structure
 
 ```
 .
-├── data/               # Input volume data (CHAOS dataset samples)
-├── docs/               # Detailed reports for both implementations
-├── include/            # Header files: DWT kernels, I/O, and inverse transform
-├── src/                # Main CUDA source file and supporting kernel logic
-├── Makefile            # Build system (debug/release/profiling targets)
-└── README.md           # You are here!
+├── data/                # Sample binary input volumes (CHAOS dataset)
+├── docs/                # Report PDFs for both assignments
+├── latex/               # IEEE-formatted LaTeX source for reports
+├── include/             # Header files (kernels, I/O, inverse DWT)
+├── src/                 # Source code for serial and parallel implementations
+│   ├── assignment-1.cpp     # Serial Multi-Level 3D DWT
+│   ├── assignment-2.cu      # CUDA Single-Level 3D DWT
+│   ├── kernels.cuh          # 1D kernel logic
+│   ├── idwt.h               # Inverse DWT (serial only)
+│   ├── loadbin.h, savebin.h # Binary I/O helpers
+├── assignment-1.sh      # SLURM batch file for serial execution
+├── assignment-2.sh      # SLURM batch file for parallel execution
+├── Makefile             # Supports release, debug, and profiler builds
+└── README.md            # Project documentation
 ```
 
----
 
-## Parallel Implementation Details
+## CUDA Implementation Highlights
 
-- The DWT is applied **dimension-wise** (X → Y → Z) using **separate CUDA kernels** for each axis.
-- **Block size** of `(16, 16, 4)` was chosen based on volume shape (rows/cols >> depth).
-- **Grid dimensions** are dynamically calculated to ensure full 3D coverage.
-- **Memory access optimizations**:
-  - Early attempts with shared memory were replaced by **constant memory**, which yielded lower execution times and better cache utilization.
-  - A packed coefficient array reduced `cudaMemcpyToSymbol` overhead.
-- **Input/output buffers are swapped** between kernel calls to minimize unnecessary data transfers.
-- Volumes are **flattened** using row-major order for GPU memory compatibility and restored post-processing.
+- DWT is applied dimension-wise with **separate CUDA kernels** for X, Y, and Z axes.
+- Memory is flattened in **row-major order** and transferred to the GPU.
+- **Grid/block sizes** dynamically adjust to input volume dimensions.
+- Input/output buffers are **swapped** between kernels to avoid redundant transfers.
+- Evaluated use of **shared memory vs constant memory** for filter coefficients.
 
----
+### Memory Optimization Comparison
+
+| Memory Type     | Transfer Time | Kernel Time | Total Time  |
+|-----------------|---------------|-------------|-------------|
+| Shared Memory   | 0.856 ms      | 12.439 ms   | 13.295 ms   |
+| Constant Memory | 7.369 ms      | 4.427 ms    | 11.796 ms   |
+
+Constant memory resulted in ~11% overall speedup due to improved caching and reduced kernel execution time.
+
+
+## Performance Evaluation
+
+| Dataset             | Serial Time | Parallel Time | Speedup  |
+|---------------------|-------------|----------------|----------|
+| 512×512×78 (large) | 170.77 ms  | 76.81 ms       | 2.22x    |
+| 128×128×20 (small) | 6.99 ms    | 7.81 ms        | 0.89x    |
+
+CUDA acceleration proves effective for large datasets where the cost of memory transfers is amortized.
+
 
 ## Build Instructions
 
 ### Requirements
-
+- CUDA Toolkit (v11.0 or later)
+- GCC/G++ compiler
 - NVIDIA GPU (Compute Capability 5.0+)
-- CUDA Toolkit (v11.0+)
-- GCC/G++ compiler and `make`
 
-### Build
-
-From the project root:
-
+### Compile
+From project root:
 ```bash
 cd src
-make release
+make release         # Optimized build
+make debug           # Debug build
+make nsys / make ncu # For profiling builds
 ```
 
-Other targets:
-- `make debug` – Enables assertions and profiling
-- `make ncu` / `make nsys` – Integration with NVIDIA profiling tools
-
----
 
 ## Run Instructions
 
+### Serial
 ```bash
-./cuda_3d_dwt <input_volume_file>
+./bin/assignment-1 file/subset4.bin file/single_haar.bin 1 1
 ```
 
-- The input should be a 3D volume stored as a binary file.
-- The output will be a forward-transformed volume.
-- I/O is handled via `loadbin.h` and `savebin.h` with minimal overhead.
+### CUDA
+```bash
+./bin/assignment-2 file/input.bin file/single_haar.bin 1 0
+```
+Use the `.sh` batch scripts to run on remote GPU compute clusters via SLURM.
 
----
 
-## Performance Highlights
+## Dataset
 
-### Shared vs Constant Memory
-| Memory Type      | Transfer Time | Kernel Time | Total       |
-|------------------|---------------|-------------|-------------|
-| Shared Memory    | 0.856 ms      | 12.439 ms   | 13.295 ms   |
-| Constant Memory  | 7.369 ms      | 4.427 ms    | 11.796 ms   |
+The CHAOS dataset was used for performance testing:
 
-✅ Constant memory yielded ~**11% speedup** due to reduced kernel execution latency.
+> Kavur, A. E., et al. (2021). "CHAOS Challenge - Combined (CT-MR) Healthy Abdominal Organ Segmentation."  
+> [https://chaos.grand-challenge.org/Download/](https://chaos.grand-challenge.org/Download/)
 
-### Speedup Over Serial
 
-| Dataset              | Serial Time | Parallel Time | Speedup  |
-|----------------------|-------------|----------------|----------|
-| Large (512×512×78)   | 170.77 ms   | 76.81 ms       | **2.22×** |
-| Small (128×128×20)   | 6.99 ms     | 7.81 ms        | **0.89×** (slower due to memory overhead)
+## Acknowledgements
 
-> 🚀 CUDA acceleration is more effective with larger datasets where memory transfer cost is amortized.
+- University of Malta – Faculty of ICT  
+- Prof. Johann A. Briffa – Lecturer & Supervisor  
+- CHAOS Challenge Dataset authors  
+- GitHub Copilot (for minor code suggestion assistance)
 
----
-
-## Challenges & Lessons Learned
-
-- Handling **memory layout, flattening, and indexing** across dimensions was complex.
-- **Block and grid design** was critical for volume alignment and optimal thread usage.
-- **Shared memory** performed worse than **constant memory** due to replication overhead.
-- **Multi-level DWT** proved too complex for the CUDA scope in this assignment but is viable for future work.
-
----
-
-## License
-
-This project was developed for academic purposes under the CCE3015 course.  
-The CHAOS dataset is credited to its original authors and is subject to their [terms of use](https://chaos.grand-challenge.org/Download/).
-
----
 
 ## Author
 
 **Graham Pellegrini**  
-B.Eng. Computer Engineering — University of Malta  
+B.Eng. (Hons) Computer Engineering  
+University of Malta  
 GitHub: [@GrahamPellegrini](https://github.com/GrahamPellegrini)
