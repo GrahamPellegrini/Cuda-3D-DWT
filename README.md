@@ -144,14 +144,6 @@ The CHAOS dataset was used for performance testing:
 > [https://chaos.grand-challenge.org/Download/](https://chaos.grand-challenge.org/Download/)
 
 
-## Acknowledgements
-
-- [University of Malta – Faculty of ICT](https://www.um.edu.mt/ict)
-- [Prof. Johann A. Briffa – Lecturer & Supervisor](https://www.um.edu.mt/profile/johannbriffa)
-- [CHAOS Challenge Dataset](https://chaos.grand-challenge.org/Download/)
-- [GitHub Copilot](https://github.com/features/copilot) (for minor code suggestion assistance)
-
-
 ## Author
 
 **Graham Pellegrini**  
