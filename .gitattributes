@@ -1,3 +1,4 @@
+# Large files tracked via LFS
 code/assignment-1/output.csv filter=lfs diff=lfs merge=lfs -text
 code/assignment-1/volume.csv filter=lfs diff=lfs merge=lfs -text
 code/assignment-1/Wavelet.ipynb filter=lfs diff=lfs merge=lfs -text
@@ -5,20 +6,25 @@ assignment-1/file/single_db2.bin filter=lfs diff=lfs merge=lfs -text
 assignment-1/file/single_haar.bin filter=lfs diff=lfs merge=lfs -text
 cce3015-venv/lib/python3.10/site-packages/cv2/cv2.abi3.so filter=lfs diff=lfs merge=lfs -text
 
-# Ignore Jupyter Notebooks and LaTeX files in GitHub language stats
+# Fully exclude documentation-related files and folders from linguist stats
 *.ipynb linguist-documentation
 *.tex linguist-documentation
-docs/* linguist-documentation
-latex/* linguist-documentation
+*.bib linguist-documentation
+*.cls linguist-documentation
+*.sty linguist-documentation
+docs/** linguist-documentation
+latex/** linguist-documentation
+
+# Ignore generated binary/data files
 *.csv linguist-generated
 *.bin linguist-generated
 
-# Prioritise CUDA and C++
+# Mark primary languages
 *.cu linguist-language=Cuda
 *.cuh linguist-language=Cuda
 *.cpp linguist-language=C++
 *.h linguist-language=C++
 
-# Exclude virtual environment and compiled binary blobs
+# Ignore non-source files and binaries
 cce3015-venv/** linguist-vendored
 *.so linguist-vendored
