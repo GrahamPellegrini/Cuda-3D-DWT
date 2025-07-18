@@ -31,26 +31,38 @@ Documentation and reports for both implementations are included in the `docs/` a
 
 ## Serial Implementation
 
-The serial implementation performs a full **multi-level 3D-DWT** and its **inverse transform**. It processes the input volume dimension-wise (X, Y, Z), recursively transforming the `LLL` sub-band at each level.
+The serial implementation performs a complete **multi-level 3D Discrete Wavelet Transform (DWT)** and its **inverse**, designed as the foundation for later CUDA parallelization. It processes medical imaging volumes by recursively applying 1D wavelet transforms along each axis (columns → rows → depth), generating eight subbands per level (e.g. LLL, LLH, ..., HHH).
 
-- Developed for **Assignment 1** of the course.
-- Core logic resides in a separate repository.
-- Tested and benchmarked using a subset of the **CHAOS Challenge** dataset.
-- Generates outputs such as forward and inverse transformed volumes.
+### Key Steps:
+- **Preprocessing**: DICOM slices are converted into NumPy 3D arrays in Python and saved as binary `.bin` files, making them compatible with C++ I/O routines.
+- **Filter Selection**: Daubechies wavelets (db1–db4) are supported using hardcoded low-pass and high-pass coefficients, sourced from PyWavelets for validation.
+- **1D DWT**: A core function convolves 1D signals with each filter, downsamples the result, and separates approximation and detail coefficients.
+- **3D DWT**: The 1D DWT is applied in sequence across the three dimensions. Each axis processes all volume slices using nested loops, storing back the coefficients in-place to minimize memory usage.
+- **Multi-Level Decomposition**: A recursive wrapper calls the 3D DWT on the LLL (approximation) subband, halving dimensions each time. Padding is applied as needed for odd dimensions.
+- **Inverse DWT**: The reconstruction reverses the transform, validating the correctness of the subband structure and ensuring loss is within expected tolerances.
+
+### Evaluation:
+- Python scripts post-process the output `.bin` files and compare the subbands against reference results from PyWavelets using **MSE** and **Euclidean distance**.
+- The implementation was benchmarked on datasets of varying resolution, showing strong consistency across levels and filters.
+
+The serial version was carefully structured for performance and clarity, using modular C++ and a portable Makefile setup. It serves as the performance baseline and functional reference for the CUDA implementation.
 
 SLURM was used to submit batch jobs to the university GPU cluster using `sbatch`.
 
 
 ## Core Parallelization Objective
 
-Assignment 2 builds upon the serial version by porting the DWT algorithm to **CUDA**, aiming to leverage parallel GPU processing for high-volume datasets. The parallel implementation includes:
+Assignment 2 builds upon the serial implementation by porting the DWT algorithm to **CUDA**, with the goal of significantly reducing execution time for large 3D volumes. Rather than modifying the serial algorithm directly, the code was refactored to fit CUDA's programming model and memory hierarchy.
 
-- CUDA kernel development for X, Y, Z axis transforms.
-- Flattened memory layout for efficient GPU access.
-- Evaluation of **shared vs constant memory** strategies.
-- Profiling with `cudaEvent`, Nsight, and NVIDIA CLI tools.
+The key objectives of the parallelization phase were:
 
-Due to complexity in managing sub-bands and dependencies, the CUDA version was scoped to a **single-level DWT**. However, it lays a strong foundation for future extension to full multi-level transforms.
+- **Separating computation by dimension**: Independent CUDA kernels were developed to apply the 1D DWT along the X, Y, and Z axes. These were launched in sequence to respect data dependencies while maximizing per-axis parallelism.
+- **Memory layout and management**: The 3D volume was flattened into a contiguous 1D array (row-major order) to ensure compatibility with GPU memory and minimize overhead during transfers.
+- **Optimizing filter access**: Both shared memory and constant memory were tested for storing wavelet coefficients. Ultimately, constant memory yielded better performance due to better cache behavior and less block-level replication.
+- **Swapping buffers efficiently**: Instead of copying outputs between levels, input/output buffers were alternated after each kernel call, minimizing memory overhead and transfer time.
+- **Profiler-driven development**: `cudaEvent`, Nsight, and command-line profilers were used to measure kernel performance and identify bottlenecks early in development.
+
+Due to the inherent complexity of recursive data dependency in multi-level DWT, this implementation is limited to a **single-level transform**. However, it forms a modular and well-optimized baseline from which full multi-level parallel DWT can be extended in future work.
 
 
 ## Folder Structure (Parallel)
@@ -134,14 +146,6 @@ make nsys / make ncu # For profiling builds
 - `inverse_flag`: `0` for forward transform, `1` for inverse (serial fallback only)
 
 SLURM was used with `sbatch` to submit batch jobs to the GPU cluster.
-
-
-## Dataset
-
-The CHAOS dataset was used for performance testing:
-
-> Kavur, A. E., et al. (2021). "CHAOS Challenge - Combined (CT-MR) Healthy Abdominal Organ Segmentation."  
-> [https://chaos.grand-challenge.org/Download/](https://chaos.grand-challenge.org/Download/)
 
 
 ## Author
