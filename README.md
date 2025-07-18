@@ -1,4 +1,22 @@
-# CUDA 3D Discrete Wavelet Transform (3D-DWT)
+<h1 align="center">CUDA 3D Discrete Wavelet Transform (3D-DWT)</h1>
+
+<p align="center">
+  <a href="https://www.um.edu.mt/courses/studyunit/CCE3015">
+    <img src="https://img.shields.io/badge/University%20of%20Malta-CCE3015-blue?style=for-the-badge&logo=nvidia&logoColor=white" alt="CCE3015 Course">
+  </a>
+  <a href="https://developer.nvidia.com/cuda-zone">
+    <img src="https://img.shields.io/badge/Built%20with-CUDA%20C%2B%2B-green?style=for-the-badge&logo=nvidia" alt="CUDA">
+  </a>
+  <a href="https://chaos.grand-challenge.org/">
+    <img src="https://img.shields.io/badge/Dataset-CHAOS%20Challenge-red?style=for-the-badge" alt="CHAOS Dataset">
+  </a>
+</p>
+
+<p align="center">
+  Parallelized GPU implementation of the 3D Discrete Wavelet Transform (3D-DWT) using CUDA C++, built for high-performance volume data processing and benchmarking against serial DWT.
+</p>
+
+---
 
 ## Project Overview
 
